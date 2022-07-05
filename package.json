@@ -17,6 +17,10 @@
     "url": "https://github.com/koishijs/registry/issues"
   },
   "homepage": "https://koishi.js.org/market.html",
+  "scripts": {
+    "build": "tsc -b",
+    "generate": "node -r esbuild-register index.ts"
+  },
   "keywords": [
     "bot",
     "chatbot",
