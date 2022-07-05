@@ -19,7 +19,7 @@
   "homepage": "https://koishi.js.org/market.html",
   "scripts": {
     "build": "tsc -b",
-    "generate": "node -r esbuild-register index.ts"
+    "generate": "node -r esbuild-register build/index.ts"
   },
   "keywords": [
     "bot",
