@@ -19,7 +19,7 @@ async function start() {
   const dirname = resolve(__dirname, '../dist')
   const result: SearchResult = { total, objects, time: '' }
   await mkdir(dirname, { recursive: true })
-  writeFile(resolve(dirname, 'result.json'), JSON.stringify(result, null, 2))
+  writeFile(resolve(dirname, 'index.json'), JSON.stringify(result))
 }
 
 if (require.main === module) {
