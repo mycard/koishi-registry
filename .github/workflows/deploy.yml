@@ -6,12 +6,18 @@ on:
     - cron: 15/30 * * * *
 
 jobs:
-  release:
+  sync:
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out
         uses: actions/checkout@v3
+
+      - name: Check out dist
+        uses: actions/checkout@v3
+        with:
+          ref: dist
+          path: dist
 
       - name: Set up Node
         uses: actions/setup-node@v2
@@ -25,10 +31,7 @@ jobs:
         run: yarn generate
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: dist
-          publish_branch: dist
-          enable_jekyll: true
-          commit_message: '[skip ci] deploy'
+        run: |
+          cd dist
+          git add -A
+          git commit -m "[skip ci] sync"

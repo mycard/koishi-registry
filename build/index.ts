@@ -1,5 +1,5 @@
 import { SearchObject, SearchResult } from '../src'
-import { mkdir, writeFile } from 'fs/promises'
+import { writeFile } from 'fs/promises'
 import { resolve } from 'path'
 import axios from 'axios'
 
@@ -12,15 +12,12 @@ async function search(offset: number) {
 }
 
 async function start() {
-  const time = new Date().toISOString()
   const total = await search(0)
   for (let offset = 250; offset < total; offset += 250) {
     await search(offset)
   }
-  const dirname = resolve(__dirname, '../dist')
-  const result: SearchResult = { total, objects, time }
-  await mkdir(dirname, { recursive: true })
-  writeFile(resolve(dirname, 'result.json'), JSON.stringify(result))
+  const result: SearchResult = { total, objects, time: '' }
+  writeFile(resolve(__dirname, '../dist', 'result.json'), JSON.stringify(result))
 }
 
 if (require.main === module) {
