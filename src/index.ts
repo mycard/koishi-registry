@@ -111,7 +111,6 @@ export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detai
 
 export interface CollectConfig {
   step?: number
-  request<T>(url: string): Promise<T>
 }
 
 export interface AnalyzeConfig {
@@ -121,7 +120,9 @@ export interface AnalyzeConfig {
   onFailure?(name: string, reason: any): void
 }
 
-export interface ScanConfig extends CollectConfig, AnalyzeConfig {}
+export interface ScanConfig extends CollectConfig, AnalyzeConfig {
+  request<T>(url: string): Promise<T>
+}
 
 export function conclude(meta: PackageJson) {
   const manifest: Manifest = {
@@ -156,34 +157,33 @@ export function conclude(meta: PackageJson) {
   return manifest
 }
 
-export class Scanner {
+export default class Scanner {
   public objects: Dict<SearchObject> = Object.create(null)
 
-  constructor(private config: CollectConfig) {}
+  constructor(private request: <T>(url: string) => Promise<T>) {}
 
-  private async search(offset: number) {
-    const { step = 250, request } = this.config
-    const result = await request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`)
+  private async search(offset: number, config: CollectConfig) {
+    const { step = 250 } = config
+    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`)
     for (const object of result.objects) {
       this.objects[object.package.name] = object
     }
     return result.total
   }
 
-  public async collect() {
-    const { step = 250 } = this.config
-    const total = await this.search(0)
+  public async collect(config: CollectConfig = {}) {
+    const { step = 250 } = config
+    const total = await this.search(0, config)
     for (let offset = step; offset < total; offset += step) {
-      await this.search(offset)
+      await this.search(offset, config)
     }
     return this.objects
   }
 
   public async analyze(config: AnalyzeConfig) {
-    const { request } = this.config
     const { concurrency = 10, version, onSuccess, onFailure } = config
 
-    await pMap(Object.values(this.objects), async (object) => {
+    const result = await pMap(Object.values(this.objects), async (object) => {
       const { name } = object.package
       const official = name.startsWith('@koishijs/plugin-')
       const community = name.startsWith('koishi-plugin-')
@@ -191,7 +191,7 @@ export class Scanner {
 
       let registry: Registry
       try {
-        registry = await request<Registry>(`/${name}`)
+        registry = await this.request<Registry>(`/${name}`)
       } catch (error) {
         onFailure?.(name, error)
         return
@@ -212,7 +212,7 @@ export class Scanner {
       if (manifest.hidden) return
 
       const shortname = official ? name.slice(17) : name.slice(14)
-      onSuccess({
+      const analyzed: AnalyzedPackage = {
         name,
         manifest,
         shortname,
@@ -222,13 +222,11 @@ export class Scanner {
         ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
         ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
         ...object.score.detail,
-      })
+      }
+      onSuccess?.(analyzed)
+      return analyzed
     }, { concurrency })
-  }
-}
 
-export default async function scan(config: ScanConfig) {
-  const scanner = new Scanner(config)
-  await scanner.collect()
-  await scanner.analyze(config)
+    return result.filter(Boolean)
+  }
 }

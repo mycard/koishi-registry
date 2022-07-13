@@ -1,10 +1,9 @@
-import { AnalyzedPackage, Scanner, SearchObject, SearchResult } from '../src'
+import Scanner, { SearchObject, SearchResult } from '../src'
 import { mkdir, writeFile } from 'fs/promises'
 import { resolve } from 'path'
 import { marked } from 'marked'
 import axios from 'axios'
-
-const BASE_URL = 'https://registry.npmjs.com'
+import { Dict } from 'cosmokit'
 
 export function deepEqual(a: any, b: any) {
   if (a === b) return true
@@ -33,12 +32,12 @@ async function getLegacy(dirname: string) {
   }
 }
 
+const BASE_URL = 'https://registry.npmjs.com'
+
 async function start() {
-  const scanner = new Scanner({
-    async request(url) {
-      const { data } = await axios.get(BASE_URL + url)
-      return data
-    },
+  const scanner = new Scanner(async (url) => {
+    const { data } = await axios.get(BASE_URL + url)
+    return data
   })
 
   const objects = await scanner.collect()
@@ -48,7 +47,7 @@ async function start() {
 
   function hasDiff() {
     if (total !== legacy.total) return true
-    const dict: Record<string, SearchObject> = {}
+    const dict: Dict<SearchObject> = {}
     for (const object of legacy.objects) {
       dict[object.package.name] = object
     }
@@ -62,12 +61,10 @@ async function start() {
   const result: SearchResult = { total, objects: Object.values(objects), time }
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(result))
 
-  const packages: AnalyzedPackage[] = []
-  await scanner.analyze({
+  const packages = await scanner.analyze({
     version: '4',
     onSuccess(item) {
-      // @ts-ignore
-      delete item.versions
+      item.versions = undefined
       item.description = marked
         .parseInline(item.description || '')
         .replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
@@ -79,7 +76,7 @@ async function start() {
   })
   packages.sort((a, b) => b.popularity - a.popularity)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
-  writeFile(dirname + '/market.json', content)
+  await writeFile(dirname + '/market.json', content)
 }
 
 if (require.main === module) {
