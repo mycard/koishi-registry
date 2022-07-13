@@ -1,9 +1,9 @@
 import Scanner, { SearchObject, SearchResult } from '../src'
 import { mkdir, writeFile } from 'fs/promises'
-import { resolve } from 'path'
-import { marked } from 'marked'
-import axios from 'axios'
 import { Dict } from 'cosmokit'
+import { marked } from 'marked'
+import { resolve } from 'path'
+import axios from 'axios'
 
 export function deepEqual(a: any, b: any) {
   if (a === b) return true
@@ -68,7 +68,6 @@ async function start() {
       item.description = marked
         .parseInline(item.description || '')
         .replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
-      packages.push(item)
     },
     onFailure(name, reason) {
       console.error(`Failed to analyze ${name}: ${reason}`)

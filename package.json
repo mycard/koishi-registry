@@ -19,7 +19,7 @@
   "homepage": "https://koishi.js.org/market.html",
   "scripts": {
     "build": "tsc -b",
-    "generate": "node -r esbuild-register build/index.ts"
+    "deploy": "node -r esbuild-register build/index.ts"
   },
   "keywords": [
     "bot",
@@ -33,9 +33,11 @@
   ],
   "devDependencies": {
     "@types/node": "^17.0.35",
+    "@types/marked": "^4.0.3",
     "axios": "^0.24.0",
     "esbuild": "^0.14.48",
     "esbuild-register": "^3.3.3",
+    "marked": "^4.0.18",
     "typescript": "^4.7.2"
   },
   "dependencies": {
