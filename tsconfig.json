@@ -1,4 +1,5 @@
 {
+  "extends": "./tsconfig.base",
   "compilerOptions": {
     "outDir": "lib",
     "rootDir": "src",
@@ -7,10 +8,6 @@
     "declaration": true,
     "composite": true,
     "incremental": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "strictBindCallApply": true,
   },
   "include": [
     "src",

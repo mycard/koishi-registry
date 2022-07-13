@@ -109,13 +109,19 @@ export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detai
   manifest: Manifest
 }
 
-export interface ScanConfig {
+export interface CollectConfig {
+  step?: number
+  request<T>(url: string): Promise<T>
+}
+
+export interface AnalyzeConfig {
   version?: string
   concurrency?: number
-  request<T>(url: string): Promise<T>
   onSuccess(item: AnalyzedPackage): void
   onFailure?(name: string, reason: any): void
 }
+
+export interface ScanConfig extends CollectConfig, AnalyzeConfig {}
 
 export function conclude(meta: PackageJson) {
   const manifest: Manifest = {
@@ -150,60 +156,79 @@ export function conclude(meta: PackageJson) {
   return manifest
 }
 
-export default async function scan(config: ScanConfig) {
-  const { version, concurrency = 10, request, onSuccess, onFailure } = config
-  const objects: SearchObject[] = []
+export class Scanner {
+  public objects: Dict<SearchObject> = Object.create(null)
 
-  async function search(offset: number) {
-    const result = await config.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=250&offset=${offset}`)
-    objects.push(...result.objects)
+  constructor(private config: CollectConfig) {}
+
+  private async search(offset: number) {
+    const { step = 250, request } = this.config
+    const result = await request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`)
+    for (const object of result.objects) {
+      this.objects[object.package.name] = object
+    }
     return result.total
   }
 
-  const total = await search(0)
-  for (let offset = objects.length; offset < total; offset += 250) {
-    await search(offset)
+  public async collect() {
+    const { step = 250 } = this.config
+    const total = await this.search(0)
+    for (let offset = step; offset < total; offset += step) {
+      await this.search(offset)
+    }
+    return this.objects
   }
 
-  await pMap(objects, async (object) => {
-    const { name } = object.package
-    const official = name.startsWith('@koishijs/plugin-')
-    const community = name.startsWith('koishi-plugin-')
-    if (!official && !community) return
+  public async analyze(config: AnalyzeConfig) {
+    const { request } = this.config
+    const { concurrency = 10, version, onSuccess, onFailure } = config
 
-    let registry: Registry
-    try {
-      registry = await request<Registry>(`/${name}`)
-    } catch (error) {
-      onFailure?.(name, error)
-      return
-    }
+    await pMap(Object.values(this.objects), async (object) => {
+      const { name } = object.package
+      const official = name.startsWith('@koishijs/plugin-')
+      const community = name.startsWith('koishi-plugin-')
+      if (!official && !community) return
 
-    const versions = Object.values(registry.versions).filter((remote) => {
-      const { dependencies, peerDependencies, deprecated } = remote
-      const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
+      let registry: Registry
       try {
-        return !deprecated && declaredVersion && intersects(version, declaredVersion)
-      } catch {}
-    }).reverse()
-    if (!versions.length) return
+        registry = await request<Registry>(`/${name}`)
+      } catch (error) {
+        onFailure?.(name, error)
+        return
+      }
 
-    const latest = registry.versions[versions[0].version]
-    latest.keywords ??= []
-    const manifest = conclude(latest)
-    if (manifest.hidden) return
+      const versions = Object.values(registry.versions).filter((remote) => {
+        const { dependencies, peerDependencies, deprecated } = remote
+        const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
+        try {
+          return !deprecated && declaredVersion && intersects(version, declaredVersion)
+        } catch {}
+      }).reverse()
+      if (!versions.length) return
 
-    const shortname = official ? name.slice(17) : name.slice(14)
-    onSuccess({
-      name,
-      manifest,
-      shortname,
-      official,
-      versions,
-      size: latest.dist.unpackedSize,
-      ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
-      ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
-      ...object.score.detail,
-    })
-  }, { concurrency })
+      const latest = registry.versions[versions[0].version]
+      latest.keywords ??= []
+      const manifest = conclude(latest)
+      if (manifest.hidden) return
+
+      const shortname = official ? name.slice(17) : name.slice(14)
+      onSuccess({
+        name,
+        manifest,
+        shortname,
+        official,
+        versions,
+        size: latest.dist.unpackedSize,
+        ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
+        ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
+        ...object.score.detail,
+      })
+    }, { concurrency })
+  }
+}
+
+export default async function scan(config: ScanConfig) {
+  const scanner = new Scanner(config)
+  await scanner.collect()
+  await scanner.analyze(config)
 }
