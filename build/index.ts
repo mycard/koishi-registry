@@ -34,32 +34,34 @@ async function getLegacy(dirname: string) {
 
 const BASE_URL = 'https://registry.npmjs.com'
 
+function makeDict(objects: SearchObject[]) {
+  const dict: Dict<SearchObject> = Object.create(null)
+  for (const object of objects) {
+    dict[object.package.name] = object
+  }
+  return dict
+}
+
 async function start() {
   const scanner = new Scanner(async (url) => {
     const { data } = await axios.get(BASE_URL + url)
     return data
   })
 
-  const objects = await scanner.collect()
-  const total = Object.keys(objects).length
   const dirname = resolve(__dirname, '../dist')
-  const legacy = await getLegacy(dirname)
+  const [legacy] = await Promise.all([getLegacy(dirname), scanner.collect()])
 
   function hasDiff() {
-    if (total !== legacy.total) return true
-    const dict: Dict<SearchObject> = {}
-    for (const object of legacy.objects) {
-      dict[object.package.name] = object
-    }
-    for (const name in { ...objects, ...dict }) {
-      if (!deepEqual(objects[name]?.package, dict[name]?.package)) return true
+    if (scanner.total !== legacy.total) return true
+    const dict1 = makeDict(scanner.objects)
+    const dict2 = makeDict(legacy.objects)
+    for (const name in { ...dict1, ...dict2 }) {
+      if (!deepEqual(dict1[name]?.package, dict2[name]?.package)) return true
     }
   }
 
   if (!hasDiff()) return
-  const time = new Date().toUTCString()
-  const result: SearchResult = { total, objects: Object.values(objects), time }
-  await writeFile(resolve(dirname, 'index.json'), JSON.stringify(result))
+  await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
   const packages = await scanner.analyze({
     version: '4',

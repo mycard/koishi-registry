@@ -111,6 +111,7 @@ export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detai
 
 export interface CollectConfig {
   step?: number
+  url?: string
 }
 
 export interface AnalyzeConfig {
@@ -157,33 +158,34 @@ export function conclude(meta: PackageJson) {
   return manifest
 }
 
-export default class Scanner {
-  public objects: Dict<SearchObject> = Object.create(null)
+export default class Scanner implements SearchResult {
+  public total: number
+  public time: string
+  public objects: SearchObject[]
 
   constructor(private request: <T>(url: string) => Promise<T>) {}
 
   private async search(offset: number, config: CollectConfig) {
-    const { step = 250 } = config
-    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`)
-    for (const object of result.objects) {
-      this.objects[object.package.name] = object
-    }
+    const { step = 250, url } = config
+    const result = await this.request<SearchResult>(url ?? `/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`)
+    this.objects.push(...result.objects)
     return result.total
   }
 
   public async collect(config: CollectConfig = {}) {
     const { step = 250 } = config
-    const total = await this.search(0, config)
-    for (let offset = step; offset < total; offset += step) {
+    this.objects = []
+    this.time = new Date().toUTCString()
+    this.total = await this.search(0, config)
+    for (let offset = this.objects.length; offset < this.total; offset += step) {
       await this.search(offset, config)
     }
-    return this.objects
   }
 
   public async analyze(config: AnalyzeConfig) {
     const { concurrency = 10, version, onSuccess, onFailure } = config
 
-    const result = await pMap(Object.values(this.objects), async (object) => {
+    const result = await pMap(this.objects, async (object) => {
       const { name } = object.package
       const official = name.startsWith('@koishijs/plugin-')
       const community = name.startsWith('koishi-plugin-')
