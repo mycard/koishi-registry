@@ -32,7 +32,6 @@ export interface Manifest {
     implements?: string[]
   }
   locales?: string[]
-  recommends?: string[]
 }
 
 export interface RemotePackage extends PackageJson {
@@ -111,7 +110,6 @@ export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detai
 
 export interface CollectConfig {
   step?: number
-  url?: string
 }
 
 export interface AnalyzeConfig {
@@ -131,7 +129,6 @@ export function conclude(meta: PackageJson) {
       en: meta.description,
     },
     locales: [],
-    recommends: [],
     ...meta.koishi,
     service: {
       required: [],
@@ -166,8 +163,8 @@ export default class Scanner implements SearchResult {
   constructor(private request: <T>(url: string) => Promise<T>) {}
 
   private async search(offset: number, config: CollectConfig) {
-    const { step = 250, url } = config
-    const result = await this.request<SearchResult>(url ?? `/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`)
+    const { step = 250 } = config
+    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`)
     this.objects.push(...result.objects)
     return result.total
   }
