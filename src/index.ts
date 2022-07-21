@@ -1,5 +1,5 @@
 import { intersects } from 'semver'
-import { Dict, pick } from 'cosmokit'
+import { Dict, pick, Time } from 'cosmokit'
 import pMap from 'p-map'
 
 export interface User {
@@ -110,6 +110,7 @@ export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detai
 
 export interface CollectConfig {
   step?: number
+  timeout?: number
 }
 
 export interface AnalyzeConfig {
@@ -155,16 +156,20 @@ export function conclude(meta: PackageJson) {
   return manifest
 }
 
+export interface RequestConfig {
+  timeout?: number
+}
+
 export default class Scanner implements SearchResult {
   public total: number
   public time: string
   public objects: SearchObject[]
 
-  constructor(private request: <T>(url: string) => Promise<T>) {}
+  constructor(private request: <T>(url: string, config?: RequestConfig) => Promise<T>) {}
 
   private async search(offset: number, config: CollectConfig) {
-    const { step = 250 } = config
-    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`)
+    const { step = 250, timeout = Time.second * 30 } = config
+    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`, { timeout })
     this.objects.push(...result.objects)
     return result.total
   }
