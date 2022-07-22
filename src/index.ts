@@ -116,8 +116,11 @@ export interface CollectConfig {
 export interface AnalyzeConfig {
   version?: string
   concurrency?: number
-  onSuccess(item: AnalyzedPackage): void
+  before?(object: SearchObject): void
+  onSuccess?(item: AnalyzedPackage): void
   onFailure?(name: string, reason: any): void
+  onSkipped?(name: string): void
+  after?(object: SearchObject): void
 }
 
 export interface ScanConfig extends CollectConfig, AnalyzeConfig {
@@ -160,10 +163,10 @@ export interface RequestConfig {
   timeout?: number
 }
 
-export default class Scanner implements SearchResult {
-  public total: number
-  public time: string
-  public objects: SearchObject[]
+export default interface Scanner extends SearchResult {}
+
+export default class Scanner {
+  public progress = 0
 
   constructor(private request: <T>(url: string, config?: RequestConfig) => Promise<T>) {}
 
@@ -184,51 +187,62 @@ export default class Scanner implements SearchResult {
     }
   }
 
+  public async process(object: SearchObject, range: string) {
+    const { name } = object.package
+    const official = name.startsWith('@koishijs/plugin-')
+    const community = name.startsWith('koishi-plugin-')
+    if (!official && !community) return
+
+    const registry = await this.request<Registry>(`/${name}`)
+    const versions = Object.values(registry.versions).filter((remote) => {
+      const { dependencies, peerDependencies, deprecated } = remote
+      const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
+      try {
+        return !deprecated && declaredVersion && intersects(range, declaredVersion)
+      } catch {}
+    }).reverse()
+    if (!versions.length) return
+
+    const latest = registry.versions[versions[0].version]
+    latest.keywords ??= []
+    const manifest = conclude(latest)
+    if (manifest.hidden) return
+
+    const shortname = official ? name.slice(17) : name.slice(14)
+    const analyzed: AnalyzedPackage = {
+      name,
+      manifest,
+      shortname,
+      official,
+      versions,
+      size: latest.dist.unpackedSize,
+      ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
+      ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
+      ...object.score.detail,
+    }
+    return analyzed
+  }
+
   public async analyze(config: AnalyzeConfig) {
-    const { concurrency = 10, version, onSuccess, onFailure } = config
+    const { concurrency = 5, version, before, onSuccess, onFailure, onSkipped, after } = config
 
     const result = await pMap(this.objects, async (object) => {
+      before?.(object)
       const { name } = object.package
-      const official = name.startsWith('@koishijs/plugin-')
-      const community = name.startsWith('koishi-plugin-')
-      if (!official && !community) return
-
-      let registry: Registry
       try {
-        registry = await this.request<Registry>(`/${name}`)
+        const analyzed = await this.process(object, version)
+        if (analyzed) {
+          onSuccess?.(analyzed)
+          return analyzed
+        } else {
+          onSkipped?.(name)
+        }
       } catch (error) {
         onFailure?.(name, error)
-        return
+      } finally {
+        this.progress += 1
+        after?.(object)
       }
-
-      const versions = Object.values(registry.versions).filter((remote) => {
-        const { dependencies, peerDependencies, deprecated } = remote
-        const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
-        try {
-          return !deprecated && declaredVersion && intersects(version, declaredVersion)
-        } catch {}
-      }).reverse()
-      if (!versions.length) return
-
-      const latest = registry.versions[versions[0].version]
-      latest.keywords ??= []
-      const manifest = conclude(latest)
-      if (manifest.hidden) return
-
-      const shortname = official ? name.slice(17) : name.slice(14)
-      const analyzed: AnalyzedPackage = {
-        name,
-        manifest,
-        shortname,
-        official,
-        versions,
-        size: latest.dist.unpackedSize,
-        ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
-        ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
-        ...object.score.detail,
-      }
-      onSuccess?.(analyzed)
-      return analyzed
     }, { concurrency })
 
     return result.filter(Boolean)
