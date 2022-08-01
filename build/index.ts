@@ -65,8 +65,11 @@ async function start() {
 
   const packages = await scanner.analyze({
     version: '4',
-    onSuccess(item) {
+    async onSuccess(item) {
+      const { data } = await axios.get('https://api.nuxtjs.org/api/npm/package/' + item.name)
+      const t = Math.exp(-data.downloads.lastMonth)
       item.versions = undefined
+      item.popularity = (1 - t) / (1 + t)
       item.description = marked
         .parseInline(item.description || '')
         .replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')

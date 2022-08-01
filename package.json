@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/registry",
   "description": "Scan Package Manager for Koishi Plugins",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,13 +32,13 @@
     "search"
   ],
   "devDependencies": {
-    "@types/node": "^17.0.35",
+    "@types/node": "^17.0.45",
     "@types/marked": "^4.0.3",
     "axios": "^0.24.0",
-    "esbuild": "^0.14.48",
+    "esbuild": "^0.14.51",
     "esbuild-register": "^3.3.3",
     "marked": "^4.0.18",
-    "typescript": "^4.7.2"
+    "typescript": "^4.7.4"
   },
   "dependencies": {
     "cosmokit": "^1.2.1",

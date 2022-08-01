@@ -1,5 +1,5 @@
 import { intersects } from 'semver'
-import { Dict, pick, Time } from 'cosmokit'
+import { Awaitable, Dict, pick, Time } from 'cosmokit'
 import pMap from 'p-map'
 
 export interface User {
@@ -117,9 +117,9 @@ export interface AnalyzeConfig {
   version?: string
   concurrency?: number
   before?(object: SearchObject): void
-  onSuccess?(item: AnalyzedPackage): void
-  onFailure?(name: string, reason: any): void
-  onSkipped?(name: string): void
+  onSuccess?(item: AnalyzedPackage): Awaitable<void>
+  onFailure?(name: string, reason: any): Awaitable<void>
+  onSkipped?(name: string): Awaitable<void>
   after?(object: SearchObject): void
 }
 
@@ -232,13 +232,13 @@ export default class Scanner {
       try {
         const analyzed = await this.process(object, version)
         if (analyzed) {
-          onSuccess?.(analyzed)
+          await onSuccess?.(analyzed)
           return analyzed
         } else {
-          onSkipped?.(name)
+          await onSkipped?.(name)
         }
       } catch (error) {
-        onFailure?.(name, error)
+        await onFailure?.(name, error)
       } finally {
         this.progress += 1
         after?.(object)
