@@ -63,13 +63,18 @@ async function start() {
   if (!hasDiff()) return
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
+  const DOWNLOAD_BASELINE = 200
+  const OFFICIAL_BONUS = 2
+
   const packages = await scanner.analyze({
     version: '4',
     async onSuccess(item) {
       const { data } = await axios.get('https://api.nuxtjs.org/api/npm/package/' + item.name)
-      const t = Math.exp(-data.downloads.lastMonth)
+      let d = -data.downloads.lastMonth / DOWNLOAD_BASELINE
+      if (item.official) d *= OFFICIAL_BONUS
+      const scale = Math.exp(d)
+      item.popularity = (1 - scale) / (1 + scale)
       item.versions = undefined
-      item.popularity = (1 - t) / (1 + t)
       item.description = marked
         .parseInline(item.description || '')
         .replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
