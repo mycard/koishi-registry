@@ -1,6 +1,6 @@
 import Scanner, { SearchObject, SearchResult } from '../src'
 import { mkdir, writeFile } from 'fs/promises'
-import { Dict } from 'cosmokit'
+import { Dict, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
 import axios from 'axios'
@@ -74,10 +74,16 @@ async function start() {
       if (item.official) d *= OFFICIAL_BONUS
       const scale = Math.exp(d)
       item.popularity = (1 - scale) / (1 + scale)
+
+      // we don't need version details
       item.versions = undefined
-      item.description = marked
-        .parseInline(item.description || '')
-        .replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
+
+      // pre-render markdown description
+      item.manifest.description = valueMap(item.manifest.description, (text) => {
+        return marked
+          .parseInline(text)
+          .replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
+      })
     },
     onFailure(name, reason) {
       console.error(`Failed to analyze ${name}: ${reason}`)
