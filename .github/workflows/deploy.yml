@@ -39,5 +39,6 @@ jobs:
           publish_branch: dist
           user_name: GitHub Actions
           user_email: actions@github.com
+          force_orphan: ${{ github.event_name == 'workflow_dispatch' }}
           enable_jekyll: true
           commit_message: '[skip ci] deploy'

@@ -4,6 +4,7 @@ import { Dict, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
 import axios from 'axios'
+import pMap from 'p-map'
 
 export function deepEqual(a: any, b: any) {
   if (a === b) return true
@@ -42,6 +43,32 @@ function makeDict(objects: SearchObject[]) {
   return dict
 }
 
+interface PackagePhobia {
+  publishSize: number
+  installSize: number
+}
+
+async function getSizeInfo(name: string) {
+  const { data } = await axios.get('https://packagephobia.com/api.json?p=' + name)
+  return data as PackagePhobia
+}
+
+interface NuxtPackage {
+  version: string
+  license: string
+  publishedAt: string
+  createdAt: string
+  updatedAt: string
+  downloads: {
+    lastMonth: number
+  }
+}
+
+async function getDownloads(name: string) {
+  const { data } = await axios.get<NuxtPackage>('https://api.nuxtjs.org/api/npm/package/' + name)
+  return data.downloads.lastMonth
+}
+
 async function start() {
   const scanner = new Scanner(async (url) => {
     const { data } = await axios.get(BASE_URL + url)
@@ -61,20 +88,52 @@ async function start() {
   }
 
   if (!hasDiff()) return
-  await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
-  const DOWNLOAD_BASELINE = 200
-  const OFFICIAL_BONUS = 2
+  function softmax(x: number) {
+    const t = Math.exp(-x)
+    return (1 - t) / (1 + t)
+  }
+
+  const weight = {
+    maintenance: 0.25,
+    popularity: 0.5,
+    quality: 0.25,
+  }
+
+  async function getMaintenance(object: SearchObject) {
+    object.official = object.package.name.startsWith('@koishijs/plugin-')
+    object.score.detail.maintenance = object.official ? 1 : 0
+  }
+
+  async function getPopularity(object: SearchObject) {
+    const downloads = await getDownloads(object.package.name)
+    object.score.detail.popularity = softmax(downloads / 200)
+  }
+
+  async function getQuality(object: SearchObject) {
+    const sizeInfo = await getSizeInfo(object.package.name)
+    Object.assign(object, sizeInfo)
+    object.score.detail.quality = Math.exp(-sizeInfo.installSize / 1000000)
+  }
+
+  // update score
+  await pMap(scanner.objects, async (object) => {
+    await Promise.all([
+      getPopularity(object),
+      getQuality(object),
+      getMaintenance(object),
+    ])
+    object.score.final = 0
+    for (const key in weight) {
+      object.score.final += weight[key] * object.score.detail[key]
+    }
+  })
+
+  await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
   const packages = await scanner.analyze({
     version: '4',
     async onSuccess(item) {
-      const { data } = await axios.get('https://api.nuxtjs.org/api/npm/package/' + item.name)
-      let d = -data.downloads.lastMonth / DOWNLOAD_BASELINE
-      if (item.official) d *= OFFICIAL_BONUS
-      const scale = Math.exp(d)
-      item.popularity = (1 - scale) / (1 + scale)
-
       // we don't need version details
       item.versions = undefined
 
@@ -89,7 +148,7 @@ async function start() {
       console.error(`Failed to analyze ${name}: ${reason}`)
     },
   })
-  packages.sort((a, b) => b.popularity - a.popularity)
+  packages.sort((a, b) => b.score - a.score)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(dirname + '/market.json', content)
 }
