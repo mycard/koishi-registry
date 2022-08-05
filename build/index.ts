@@ -69,6 +69,35 @@ async function getDownloads(name: string) {
   return data.downloads.lastMonth
 }
 
+function softmax(x: number) {
+  const t = Math.exp(-x)
+  return (1 - t) / (1 + t)
+}
+
+type Subjects = 'maintenance' | 'popularity' | 'quality'
+
+const weights: Record<Subjects, number> = {
+  maintenance: 0.1,
+  popularity: 0.6,
+  quality: 0.3,
+}
+
+const evaluators: Record<Subjects, (object: SearchObject) => Promise<number>> = {
+  async maintenance(object) {
+    object.official = object.package.name.startsWith('@koishijs/plugin-')
+    return object.official ? 1 : 0
+  },
+  async popularity(object) {
+    const downloads = await getDownloads(object.package.name)
+    return softmax(downloads / 200)
+  },
+  async quality(object: SearchObject) {
+    const sizeInfo = await getSizeInfo(object.package.name)
+    Object.assign(object, sizeInfo)
+    return Math.exp(-sizeInfo.installSize / 5000000)
+  },
+}
+
 async function start() {
   const scanner = new Scanner(async (url) => {
     const { data } = await axios.get(BASE_URL + url)
@@ -87,46 +116,21 @@ async function start() {
     }
   }
 
-  if (!hasDiff()) return
+  if (process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch' && !hasDiff()) return
 
-  function softmax(x: number) {
-    const t = Math.exp(-x)
-    return (1 - t) / (1 + t)
-  }
-
-  const weight = {
-    maintenance: 0.25,
-    popularity: 0.5,
-    quality: 0.25,
-  }
-
-  async function getMaintenance(object: SearchObject) {
-    object.official = object.package.name.startsWith('@koishijs/plugin-')
-    object.score.detail.maintenance = object.official ? 1 : 0
-  }
-
-  async function getPopularity(object: SearchObject) {
-    const downloads = await getDownloads(object.package.name)
-    object.score.detail.popularity = softmax(downloads / 200)
-  }
-
-  async function getQuality(object: SearchObject) {
-    const sizeInfo = await getSizeInfo(object.package.name)
-    Object.assign(object, sizeInfo)
-    object.score.detail.quality = Math.exp(-sizeInfo.installSize / 1000000)
-  }
-
-  // update score
+  // evaluate score
   await pMap(scanner.objects, async (object) => {
-    await Promise.all([
-      getPopularity(object),
-      getQuality(object),
-      getMaintenance(object),
-    ])
     object.score.final = 0
-    for (const key in weight) {
-      object.score.final += weight[key] * object.score.detail[key]
-    }
+    await Promise.all(Object.keys(weights).map(async (subject) => {
+      let value = 0
+      try {
+        value = await evaluators[subject](object)
+      } catch (e) {
+        console.log('failed to evaluate %s of %s', subject, object.package.name)
+      }
+      object.score.detail[subject] = value
+      object.score.final += weights[subject] * value
+    }))
   })
 
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
@@ -148,6 +152,7 @@ async function start() {
       console.error(`Failed to analyze ${name}: ${reason}`)
     },
   })
+
   packages.sort((a, b) => b.score - a.score)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(dirname + '/market.json', content)
