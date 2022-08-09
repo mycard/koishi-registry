@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'fs/promises'
 import { Dict, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
+import bundle from './bundle'
 import axios from 'axios'
 import pMap from 'p-map'
 
@@ -162,6 +163,27 @@ async function start() {
   packages.sort((a, b) => b.score - a.score)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(resolve(dirname, 'market.json'), content)
+
+  // bundle plugins
+  for (const item of packages) {
+    startGroup(`${item.name}@${item.version}`)
+    await bundle(item.name, item.version).catch(() => {})
+    endGroup()
+  }
+}
+
+function startGroup(name: string) {
+  if ('GITHUB_ACTIONS' in process.env) {
+    console.log(`::group::${name}`)
+  } else {
+    console.log(name)
+  }
+}
+
+function endGroup() {
+  if ('GITHUB_ACTIONS' in process.env) {
+    console.log(`::endgroup::`)
+  }
 }
 
 if (require.main === module) {
