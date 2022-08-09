@@ -98,6 +98,8 @@ const evaluators: Record<Subjects, (object: SearchObject) => Promise<number>> = 
   },
 }
 
+const REFRESH_INTERVAL = 24 * 60 * 60 * 1000
+
 async function start() {
   const scanner = new Scanner(async (url) => {
     const { data } = await axios.get(BASE_URL + url)
@@ -107,7 +109,8 @@ async function start() {
   const dirname = resolve(__dirname, '../dist')
   const [legacy] = await Promise.all([getLegacy(dirname), scanner.collect()])
 
-  function hasDiff() {
+  function shouldUpdate() {
+    if (+new Date(scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) return true
     if (scanner.total !== legacy.total) return true
     const dict1 = makeDict(scanner.objects)
     const dict2 = makeDict(legacy.objects)
@@ -116,7 +119,9 @@ async function start() {
     }
   }
 
-  if (process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch' && !hasDiff()) return
+  const isScheduled = process.env.GITHUB_EVENT_NAME === 'schedule'
+  if (isScheduled || !shouldUpdate()) return
+  console.log('::set-output name=update::true')
 
   // evaluate score
   await pMap(scanner.objects, async (object) => {
@@ -135,6 +140,7 @@ async function start() {
 
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
+  // check versions
   const packages = await scanner.analyze({
     version: '4',
     async onSuccess(item) {
@@ -155,7 +161,7 @@ async function start() {
 
   packages.sort((a, b) => b.score - a.score)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
-  await writeFile(dirname + '/market.json', content)
+  await writeFile(resolve(dirname, 'market.json'), content)
 }
 
 if (require.main === module) {

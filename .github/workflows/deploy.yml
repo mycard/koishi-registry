@@ -28,17 +28,49 @@ jobs:
       - name: Install
         run: yarn
 
-      - name: Generate
+      - name: Sync
+        id: sync
         run: yarn deploy
 
-      - name: Deploy
+      - name: Deploy assets
+        if: ${{ steps.sync.output.update }}
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: dist
+
+      - name: Remove files
+        if: ${{ steps.sync.output.update }}
+        run: |
+          rm -rf dist/plugins
+
+      - name: Deploy index
         uses: peaceiris/actions-gh-pages@v3
+        if: ${{ steps.sync.output.update }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist
           publish_branch: dist
           user_name: GitHub Actions
           user_email: actions@github.com
-          force_orphan: ${{ github.event_name == 'workflow_dispatch' }}
+          force_orphan: true
           enable_jekyll: true
           commit_message: '[skip ci] deploy'
+
+  deploy:
+    needs:
+      - sync
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.pages_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v1
