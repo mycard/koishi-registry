@@ -165,24 +165,9 @@ async function start() {
   await writeFile(resolve(dirname, 'market.json'), content)
 
   // bundle plugins
-  for (const item of packages) {
-    startGroup(`${item.name}@${item.version}`)
-    await bundle(item.name, item.version).catch(() => {})
-    endGroup()
-  }
-}
-
-function startGroup(name: string) {
-  if ('GITHUB_ACTIONS' in process.env) {
-    console.log(`::group::${name}`)
-  } else {
-    console.log(name)
-  }
-}
-
-function endGroup() {
-  if ('GITHUB_ACTIONS' in process.env) {
-    console.log(`::endgroup::`)
+  for (const { name, version } of packages) {
+    const message = await bundle(name, version).catch(() => 'prepare failed')
+    console.log(`- ${name}@${version}: ${message || 'success'}`)
   }
 }
 
