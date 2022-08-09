@@ -112,6 +112,10 @@ export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detai
   versions: RemotePackage[]
   manifest: Manifest
   score: number
+
+  // extended fields
+  publishSize?: number
+  installSize?: number
 }
 
 export interface CollectConfig {
@@ -123,7 +127,7 @@ export interface AnalyzeConfig {
   version?: string
   concurrency?: number
   before?(object: SearchObject): void
-  onSuccess?(item: AnalyzedPackage): Awaitable<void>
+  onSuccess?(item: AnalyzedPackage, object: SearchObject): Awaitable<void>
   onFailure?(name: string, reason: any): Awaitable<void>
   onSkipped?(name: string): Awaitable<void>
   after?(object: SearchObject): void
@@ -239,7 +243,7 @@ export default class Scanner {
       try {
         const analyzed = await this.process(object, version)
         if (analyzed) {
-          await onSuccess?.(analyzed)
+          await onSuccess?.(analyzed, object)
           return analyzed
         } else {
           await onSkipped?.(name)

@@ -1,4 +1,4 @@
-import Scanner, { SearchObject, SearchResult } from '../src'
+import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
 import { mkdir, writeFile } from 'fs/promises'
 import { Dict, valueMap } from 'cosmokit'
 import { marked } from 'marked'
@@ -144,9 +144,11 @@ async function start() {
   // check versions
   const packages = await scanner.analyze({
     version: '4',
-    async onSuccess(item) {
+    async onSuccess(item, object) {
       // we don't need version details
       item.versions = undefined
+      item.publishSize = object.publishSize
+      item.installSize = object.installSize
 
       // pre-render markdown description
       item.manifest.description = valueMap(item.manifest.description, (text) => {
@@ -164,10 +166,15 @@ async function start() {
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(resolve(dirname, 'market.json'), content)
 
+  function execute({ name, version, official, installSize }: AnalyzedPackage) {
+    if (installSize > 1048576 && !official) return 'size exceeded'
+    return bundle(name, version).catch(() => 'prepare failed')
+  }
+
   // bundle plugins
-  for (const { name, version } of packages) {
-    const message = await bundle(name, version).catch(() => 'prepare failed')
-    console.log(`- ${name}@${version}: ${message || 'success'}`)
+  for (const item of packages) {
+    const message = await execute(item)
+    console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
   }
 }
 

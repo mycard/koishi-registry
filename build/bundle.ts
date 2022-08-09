@@ -61,7 +61,7 @@ async function bundle(name: string) {
   })
 
   const { contents } = result.outputFiles[0]
-  if (contents.byteLength > 1024 * 1024) return 'bundle too large'
+  if (contents.byteLength > 1024 * 1024) return 'size exceeded'
   const filename = resolve(__dirname, '../dist/plugins', name + '.js')
   await mkdir(dirname(filename), { recursive: true })
   await writeFile(filename, contents)
