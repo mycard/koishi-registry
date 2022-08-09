@@ -120,7 +120,7 @@ async function start() {
   }
 
   const isScheduled = process.env.GITHUB_EVENT_NAME === 'schedule'
-  if (isScheduled || !shouldUpdate()) return
+  if (isScheduled && !shouldUpdate()) return
   console.log('::set-output name=update::true')
 
   // evaluate score
