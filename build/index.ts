@@ -166,16 +166,16 @@ async function start() {
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(resolve(dirname, 'market.json'), content)
 
+  // bundle plugins
   function execute({ name, version, official, installSize }: AnalyzedPackage) {
-    if (installSize > 1048576 && !official) return 'size exceeded'
+    if (installSize > 5 * 1024 * 1024 && !official) return 'size exceeded'
     return bundle(name, version).catch(() => 'prepare failed')
   }
 
-  // bundle plugins
-  for (const item of packages) {
+  await Promise.all(packages.map(async (item) => {
     const message = await execute(item)
     console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
-  }
+  }))
 }
 
 if (require.main === module) {

@@ -14,30 +14,31 @@ function spawnAsync(args: string[], options?: SpawnOptions) {
 }
 
 const tempDir = resolve(__dirname, '../temp')
-const tempRequire = createRequire(tempDir + '/package.json')
 
 export default async function start(name: string, version: string) {
-  await rm(tempDir, { recursive: true, force: true })
-  await mkdir(tempDir, { recursive: true })
-  await writeFile(tempDir + '/index.js', `module.exports = require('${name}')`)
-  await writeFile(tempDir + '/package.json', JSON.stringify({
+  const cwd = resolve(tempDir, name)
+  await rm(cwd, { recursive: true, force: true })
+  await mkdir(cwd, { recursive: true })
+  await writeFile(cwd + '/index.js', `module.exports = require('${name}')`)
+  await writeFile(cwd + '/package.json', JSON.stringify({
     dependencies: {
       [name]: version,
     },
   }))
 
-  const code = await spawnAsync(['npm', 'install'], { cwd: tempDir })
+  const code = await spawnAsync(['npm', 'install'], { cwd })
   if (code) return 'install failed'
 
-  return bundle(name).catch(() => 'bundle failed')
+  return bundle(name, cwd).catch(() => 'bundle failed')
 }
 
-async function bundle(name: string) {
-  const meta: PackageJson = tempRequire(name + '/package.json')
+async function bundle(name: string, cwd: string) {
+  const require = createRequire(cwd + '/package.json')
+  const meta: PackageJson = require(name + '/package.json')
   const result = await build({
     outdir: resolve(__dirname, '../dist'),
-    outbase: tempDir,
-    entryPoints: [tempDir + '/index.js'],
+    outbase: cwd,
+    entryPoints: [cwd + '/index.js'],
     bundle: true,
     minify: true,
     write: false,
@@ -67,6 +68,6 @@ async function bundle(name: string) {
   await writeFile(filename, contents)
 }
 
-if (tempRequire.main === module) {
-  start('koishi-plugin-hangman', '1.0.11')
+if (require.main === module) {
+  start('koishi-plugin-dialogue', '4.0.1')
 }
