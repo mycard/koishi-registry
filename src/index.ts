@@ -72,15 +72,15 @@ export interface SearchPackage extends BasePackage {
   keywords: string[]
 }
 
-export interface SearchObject {
+export interface Extension {
+  publishSize?: number
+  installSize?: number
+}
+
+export interface SearchObject extends Extension {
   package: SearchPackage
   score: SearchObject.Score
   searchScore: number
-
-  // extended fields
-  official?: boolean
-  publishSize?: number
-  installSize?: number
 }
 
 export namespace SearchObject {
@@ -104,7 +104,7 @@ export interface SearchResult {
   objects: SearchObject[]
 }
 
-export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detail {
+export interface AnalyzedPackage extends SearchPackage, Extension, SearchObject.Score.Detail {
   shortname: string
   official: boolean
   size: number
@@ -112,10 +112,6 @@ export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detai
   versions: RemotePackage[]
   manifest: Manifest
   score: number
-
-  // extended fields
-  publishSize?: number
-  installSize?: number
 }
 
 export interface CollectConfig {
@@ -227,6 +223,7 @@ export default class Scanner {
       versions,
       score: object.score.final,
       size: latest.dist.unpackedSize,
+      ...pick(object, ['installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
       ...object.score.detail,

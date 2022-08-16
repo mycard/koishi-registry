@@ -85,8 +85,8 @@ const weights: Record<Subjects, number> = {
 
 const evaluators: Record<Subjects, (object: SearchObject) => Promise<number>> = {
   async maintenance(object) {
-    object.official = object.package.name.startsWith('@koishijs/plugin-')
-    return object.official ? 1 : 0
+    const official = object.package.name.startsWith('@koishijs/plugin-')
+    return official ? 1 : 0
   },
   async popularity(object) {
     const downloads = await getDownloads(object.package.name)
@@ -144,11 +144,9 @@ async function start() {
   // check versions
   const packages = await scanner.analyze({
     version: '4',
-    async onSuccess(item, object) {
+    async onSuccess(item) {
       // we don't need version details
       item.versions = undefined
-      item.publishSize = object.publishSize
-      item.installSize = object.installSize
 
       // pre-render markdown description
       item.manifest.description = valueMap(item.manifest.description, (text) => {
