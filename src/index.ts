@@ -25,6 +25,7 @@ export interface PackageJson extends BasePackage {
 
 export interface Manifest {
   hidden?: boolean
+  category?: string
   description?: Dict<string>
   service?: {
     required?: string[]
@@ -201,8 +202,8 @@ export default class Scanner {
 
     const registry = await this.request<Registry>(`/${name}`)
     const versions = Object.values(registry.versions).filter((remote) => {
-      const { dependencies, peerDependencies, deprecated } = remote
-      const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
+      const { peerDependencies = {}, deprecated } = remote
+      const declaredVersion = peerDependencies['koishi']
       try {
         return !deprecated && declaredVersion && intersects(range, declaredVersion)
       } catch {}
