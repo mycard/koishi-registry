@@ -3,7 +3,6 @@ import { mkdir, writeFile } from 'fs/promises'
 import { Dict, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
-import bundle from './bundle'
 import axios from 'axios'
 
 export function deepEqual(a: any, b: any) {
@@ -99,7 +98,7 @@ const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject)
     const { name } = item
     if (verified.includes(name)) item.verified = true
     if (item.verified) return 1
-    if (insecure.some(name => item.versions[0].dependencies[name])) return 0
+    if (insecure.some(name => item.versions[0].dependencies?.[name])) return 0
     return 0.5
   },
   async popularity(item, object) {
@@ -173,22 +172,12 @@ async function start() {
 
   // write to file
   scanner.objects = scanner.objects.filter(object => !object.ignore)
+  scanner.total = scanner.objects.length
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
   packages.sort((a, b) => b.score.final - a.score.final)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(resolve(dirname, 'market.json'), content)
-
-  // bundle plugins
-  function execute({ name, version, verified, installSize }: AnalyzedPackage) {
-    if (installSize > 5 * 1024 * 1024 && !verified) return 'size exceeded'
-    return bundle(name, version).catch(() => 'prepare failed')
-  }
-
-  await Promise.all(packages.map(async (item) => {
-    const message = await execute(item)
-    console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
-  }))
 }
 
 if (require.main === module) {

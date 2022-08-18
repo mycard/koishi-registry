@@ -1,10 +1,10 @@
+import { AnalyzedPackage, PackageJson } from '../src'
 import { mkdir, rm, writeFile } from 'fs/promises'
 import { SpawnOptions } from 'child_process'
 import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
 import spawn from 'cross-spawn'
-import { PackageJson } from '../src'
 
 function spawnAsync(args: string[], options?: SpawnOptions) {
   const child = spawn(args[0], args.slice(1), { ...options, stdio: 'ignore' })
@@ -15,16 +15,22 @@ function spawnAsync(args: string[], options?: SpawnOptions) {
 
 const tempDir = resolve(__dirname, '../temp')
 
-export default async function start(name: string, version: string) {
+async function execute({ name, version, installSize, verified }: AnalyzedPackage) {
+  if (installSize > 5 * 1024 * 1024 && !verified) return 'size exceeded'
+
   const cwd = resolve(tempDir, name)
-  await rm(cwd, { recursive: true, force: true })
-  await mkdir(cwd, { recursive: true })
-  await writeFile(cwd + '/index.js', `module.exports = require('${name}')`)
-  await writeFile(cwd + '/package.json', JSON.stringify({
-    dependencies: {
-      [name]: version,
-    },
-  }))
+  try {
+    await rm(cwd, { recursive: true, force: true })
+    await mkdir(cwd, { recursive: true })
+    await writeFile(cwd + '/index.js', `module.exports = require('${name}')`)
+    await writeFile(cwd + '/package.json', JSON.stringify({
+      dependencies: {
+        [name]: version,
+      },
+    }))
+  } catch (err) {
+    return 'prepare failed'
+  }
 
   const code = await spawnAsync(['npm', 'install'], { cwd })
   if (code) return 'install failed'
@@ -48,7 +54,7 @@ async function bundle(name: string, cwd: string) {
     format: 'cjs',
     logLevel: 'silent',
     define: {
-      'process.env.KOISHI_PLAY': 'true',
+      'process.env.BROWSER': 'true',
     },
     plugins: [{
       name: 'dep check',
@@ -68,6 +74,14 @@ async function bundle(name: string, cwd: string) {
   await writeFile(filename, contents)
 }
 
+async function start() {
+  const packages: AnalyzedPackage[] = require('../dist/market').packages
+  await Promise.all(packages.map(async (item) => {
+    const message = await execute(item)
+    console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
+  }))
+}
+
 if (require.main === module) {
-  start('koishi-plugin-dialogue', '4.0.1')
+  start()
 }
