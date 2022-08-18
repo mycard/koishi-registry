@@ -94,8 +94,9 @@ const evaluators: Record<Subjects, (object: SearchObject) => Promise<number>> = 
   },
   async quality(object: SearchObject) {
     const sizeInfo = await getSizeInfo(object.package.name)
+    object.package.links.size = `https://packagephobia.com/result?p=${object.package.name}`
     Object.assign(object, sizeInfo)
-    return Math.exp(-sizeInfo.installSize / 5000000)
+    return Math.exp(-sizeInfo.installSize / 20000000)
   },
 }
 
