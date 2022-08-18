@@ -5,7 +5,6 @@ import { marked } from 'marked'
 import { resolve } from 'path'
 import bundle from './bundle'
 import axios from 'axios'
-import pMap from 'p-map'
 
 export function deepEqual(a: any, b: any) {
   if (a === b) return true
@@ -85,27 +84,34 @@ const verified = [
   'koishi-plugin-screenshot',
 ]
 
+const insecure = [
+  'koishi-thirdeye',
+]
+
 const weights: Record<Subjects, number> = {
   maintenance: 0.2,
   popularity: 0.5,
   quality: 0.3,
 }
 
-const evaluators: Record<Subjects, (object: SearchObject) => Promise<number>> = {
-  async maintenance(object) {
-    const { name } = object.package
-    const official = name.startsWith('@koishijs/plugin-') || verified.includes(name)
-    return official ? 2 : 1
+const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
+  async maintenance(item, object) {
+    const { name } = item
+    if (verified.includes(name)) item.verified = true
+    if (item.verified) return 1
+    if (insecure.some(name => item.versions[0].dependencies[name])) return 0
+    return 0.5
   },
-  async popularity(object) {
-    const downloads = await getDownloads(object.package.name)
-    object.downloads = downloads
+  async popularity(item, object) {
+    const downloads = await getDownloads(item.name)
+    item.downloads = object.downloads = downloads
     return softmax(downloads.lastMonth / 200)
   },
-  async quality(object: SearchObject) {
-    const sizeInfo = await getSizeInfo(object.package.name)
-    object.package.links.size = `https://packagephobia.com/result?p=${object.package.name}`
+  async quality(item, object) {
+    const sizeInfo = await getSizeInfo(item.name)
+    item.links.size = `https://packagephobia.com/result?p=${item.name}`
     Object.assign(object, sizeInfo)
+    Object.assign(item, sizeInfo)
     return Math.exp(-sizeInfo.installSize / 10000000)
   },
 }
@@ -139,38 +145,34 @@ async function start() {
   const packages = await scanner.analyze({
     version: '4',
     async onSuccess(item, object) {
+      // evaluate score
+      object.score.final = 0
+      await Promise.all(Object.keys(weights).map(async (subject) => {
+        let value = 0
+        try {
+          value = await evaluators[subject](item, object)
+        } catch (e) {
+          console.log('Failed to evaluate %s of %s', subject, object.package.name)
+        }
+        object.score.detail[subject] = value
+        object.score.final += weights[subject] * value
+      }))
+
       // we don't need version details
       item.versions = undefined
 
       // pre-render markdown description
-      item.manifest.description = valueMap(item.manifest.description, (text) => {
-        return marked
-          .parseInline(text)
-          .replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
-      })
+      item.manifest.description = valueMap(item.manifest.description, text => marked
+        .parseInline(text)
+        .replace('<a ', '<a target="_blank" rel="noopener noreferrer" '))
     },
     onFailure(name, reason) {
       console.error(`Failed to analyze ${name}: ${reason}`)
     },
   })
 
-  // evaluate score
-  scanner.objects = scanner.objects.filter(object => !object.ignore)
-  await pMap(scanner.objects, async (object) => {
-    object.score.final = 0
-    await Promise.all(Object.keys(weights).map(async (subject) => {
-      let value = 0
-      try {
-        value = await evaluators[subject](object)
-      } catch (e) {
-        console.log('Failed to evaluate %s of %s', subject, object.package.name)
-      }
-      object.score.detail[subject] = value
-      object.score.final += weights[subject] * value
-    }))
-  }, { concurrency: 10 })
-
   // write to file
+  scanner.objects = scanner.objects.filter(object => !object.ignore)
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
   packages.sort((a, b) => b.score.final - a.score.final)
@@ -178,8 +180,8 @@ async function start() {
   await writeFile(resolve(dirname, 'market.json'), content)
 
   // bundle plugins
-  function execute({ name, version, official, installSize }: AnalyzedPackage) {
-    if (installSize > 5 * 1024 * 1024 && !official) return 'size exceeded'
+  function execute({ name, version, verified, installSize }: AnalyzedPackage) {
+    if (installSize > 5 * 1024 * 1024 && !verified) return 'size exceeded'
     return bundle(name, version).catch(() => 'prepare failed')
   }
 

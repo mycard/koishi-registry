@@ -116,7 +116,7 @@ export interface SearchResult {
 
 export interface AnalyzedPackage extends SearchPackage, Extension {
   shortname: string
-  official: boolean
+  verified: boolean
   license: string
   versions: RemotePackage[]
   manifest: Manifest
@@ -230,8 +230,8 @@ export default class Scanner {
       name,
       manifest,
       shortname,
-      official,
       versions,
+      verified: official,
       ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
