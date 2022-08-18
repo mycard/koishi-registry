@@ -67,7 +67,7 @@ interface NuxtPackage {
 
 async function getDownloads(name: string) {
   const { data } = await axios.get<NuxtPackage>('https://api.nuxtjs.org/api/npm/package/' + name)
-  return data.downloads.lastMonth
+  return data.downloads
 }
 
 function softmax(x: number) {
@@ -77,26 +77,36 @@ function softmax(x: number) {
 
 type Subjects = 'maintenance' | 'popularity' | 'quality'
 
+const verified = [
+  'koishi-plugin-dialogue',
+  'koishi-plugin-github',
+  'koishi-plugin-gocqhttp',
+  'koishi-plugin-puppeteer',
+  'koishi-plugin-screenshot',
+]
+
 const weights: Record<Subjects, number> = {
-  maintenance: 0.1,
-  popularity: 0.6,
+  maintenance: 0.2,
+  popularity: 0.5,
   quality: 0.3,
 }
 
 const evaluators: Record<Subjects, (object: SearchObject) => Promise<number>> = {
   async maintenance(object) {
-    const official = object.package.name.startsWith('@koishijs/plugin-')
-    return official ? 1 : 0
+    const { name } = object.package
+    const official = name.startsWith('@koishijs/plugin-') || verified.includes(name)
+    return official ? 2 : 1
   },
   async popularity(object) {
     const downloads = await getDownloads(object.package.name)
-    return softmax(downloads / 200)
+    object.downloads = downloads
+    return softmax(downloads.lastMonth / 200)
   },
   async quality(object: SearchObject) {
     const sizeInfo = await getSizeInfo(object.package.name)
     object.package.links.size = `https://packagephobia.com/result?p=${object.package.name}`
     Object.assign(object, sizeInfo)
-    return Math.exp(-sizeInfo.installSize / 20000000)
+    return Math.exp(-sizeInfo.installSize / 10000000)
   },
 }
 
@@ -125,27 +135,10 @@ async function start() {
   if (isScheduled && !shouldUpdate()) return
   console.log('::set-output name=update::true')
 
-  // evaluate score
-  await pMap(scanner.objects, async (object) => {
-    object.score.final = 0
-    await Promise.all(Object.keys(weights).map(async (subject) => {
-      let value = 0
-      try {
-        value = await evaluators[subject](object)
-      } catch (e) {
-        console.log('failed to evaluate %s of %s', subject, object.package.name)
-      }
-      object.score.detail[subject] = value
-      object.score.final += weights[subject] * value
-    }))
-  })
-
-  await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
-
   // check versions
   const packages = await scanner.analyze({
     version: '4',
-    async onSuccess(item) {
+    async onSuccess(item, object) {
       // we don't need version details
       item.versions = undefined
 
@@ -161,7 +154,26 @@ async function start() {
     },
   })
 
-  packages.sort((a, b) => b.score - a.score)
+  // evaluate score
+  scanner.objects = scanner.objects.filter(object => !object.ignore)
+  await pMap(scanner.objects, async (object) => {
+    object.score.final = 0
+    await Promise.all(Object.keys(weights).map(async (subject) => {
+      let value = 0
+      try {
+        value = await evaluators[subject](object)
+      } catch (e) {
+        console.log('Failed to evaluate %s of %s', subject, object.package.name)
+      }
+      object.score.detail[subject] = value
+      object.score.final += weights[subject] * value
+    }))
+  }, { concurrency: 10 })
+
+  // write to file
+  await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
+
+  packages.sort((a, b) => b.score.final - a.score.final)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(resolve(dirname, 'market.json'), content)
 

@@ -1,5 +1,5 @@
 import { intersects } from 'semver'
-import { Awaitable, Dict, pick, Time } from 'cosmokit'
+import { Awaitable, defineProperty, Dict, pick, Time } from 'cosmokit'
 import pMap from 'p-map'
 
 export interface User {
@@ -23,7 +23,14 @@ export interface PackageJson extends BasePackage {
   optionalDependencies?: Dict<string>
 }
 
+export interface IconSvg {
+  type: 'svg'
+  viewBox: string
+  pathData: string
+}
+
 export interface Manifest {
+  icon?: IconSvg
   hidden?: boolean
   category?: string
   description?: Dict<string>
@@ -76,26 +83,28 @@ export interface SearchPackage extends BasePackage {
 export interface Extension {
   publishSize?: number
   installSize?: number
+  downloads?: {
+    lastMonth: number
+  }
 }
 
 export interface SearchObject extends Extension {
   package: SearchPackage
-  score: SearchObject.Score
+  score: Score
   searchScore: number
+  ignore?: boolean
 }
 
-export namespace SearchObject {
-  export interface Score {
-    final: number
-    detail: Score.Detail
-  }
+export interface Score {
+  final: number
+  detail: Score.Detail
+}
 
-  export namespace Score {
-    export interface Detail {
-      quality: number
-      popularity: number
-      maintenance: number
-    }
+export namespace Score {
+  export interface Detail {
+    quality: number
+    popularity: number
+    maintenance: number
   }
 }
 
@@ -105,14 +114,13 @@ export interface SearchResult {
   objects: SearchObject[]
 }
 
-export interface AnalyzedPackage extends SearchPackage, Extension, SearchObject.Score.Detail {
+export interface AnalyzedPackage extends SearchPackage, Extension {
   shortname: string
   official: boolean
-  size: number
   license: string
   versions: RemotePackage[]
   manifest: Manifest
-  score: number
+  score: Score
 }
 
 export interface CollectConfig {
@@ -170,12 +178,14 @@ export interface RequestConfig {
   timeout?: number
 }
 
-export default interface Scanner extends SearchResult {}
+export default interface Scanner extends SearchResult {
+  progress: number
+}
 
 export default class Scanner {
-  public progress = 0
-
-  constructor(private request: <T>(url: string, config?: RequestConfig) => Promise<T>) {}
+  constructor(private request: <T>(url: string, config?: RequestConfig) => Promise<T>) {
+    defineProperty(this, 'progress', 0)
+  }
 
   private async search(offset: number, config: CollectConfig) {
     const { step = 250, timeout = Time.second * 30 } = config
@@ -222,12 +232,9 @@ export default class Scanner {
       shortname,
       official,
       versions,
-      score: object.score.final,
-      size: latest.dist.unpackedSize,
-      ...pick(object, ['installSize', 'publishSize']),
+      ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
-      ...object.score.detail,
     }
     return analyzed
   }
@@ -244,9 +251,11 @@ export default class Scanner {
           await onSuccess?.(analyzed, object)
           return analyzed
         } else {
+          object.ignore = true
           await onSkipped?.(name)
         }
       } catch (error) {
+        object.ignore = true
         await onFailure?.(name, error)
       } finally {
         this.progress += 1
