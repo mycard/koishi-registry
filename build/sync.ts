@@ -88,8 +88,8 @@ const insecure = [
 ]
 
 const weights: Record<Subjects, number> = {
-  maintenance: 0.2,
-  popularity: 0.5,
+  maintenance: 0.3,
+  popularity: 0.4,
   quality: 0.3,
 }
 
@@ -99,7 +99,7 @@ const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject)
     if (verified.includes(name)) item.verified = true
     if (item.verified) return 1
     if (insecure.some(name => item.versions[0].dependencies?.[name])) return 0
-    return 0.5
+    return 0.75
   },
   async popularity(item, object) {
     const downloads = await getDownloads(item.name)
@@ -132,7 +132,10 @@ async function start() {
     const dict1 = makeDict(scanner.objects)
     const dict2 = makeDict(legacy.objects)
     for (const name in { ...dict1, ...dict2 }) {
-      if (!deepEqual(dict1[name]?.package, dict2[name]?.package)) return true
+      if (!deepEqual(dict1[name]?.package, dict2[name]?.package)) {
+        console.log(dict1[name]?.package, dict2[name]?.package)
+        return true
+      }
     }
   }
 
@@ -141,6 +144,7 @@ async function start() {
   console.log('::set-output name=update::true')
 
   // check versions
+  const verified = new Set<string>()
   const packages = await scanner.analyze({
     version: '4',
     async onSuccess(item, object) {
@@ -157,6 +161,10 @@ async function start() {
         object.score.final += weights[subject] * value
       }))
 
+      if (item.verified) {
+        verified.add(item.shortname)
+      }
+
       // we don't need version details
       item.versions = undefined
 
@@ -169,6 +177,15 @@ async function start() {
       console.error(`Failed to analyze ${name}: ${reason}`)
     },
   })
+
+  // resolve name conflicts
+  for (let index = packages.length - 1; index >= 0; index--) {
+    const item = packages[index]
+    if (item.verified || !verified.has(item.shortname)) continue
+    packages.splice(index, 1)
+    const object = scanner.objects.find(object => object.package.name === item.name)
+    object.ignore = true
+  }
 
   // write to file
   scanner.objects = scanner.objects.filter(object => !object.ignore)

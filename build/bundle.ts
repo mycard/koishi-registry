@@ -1,13 +1,12 @@
 import { AnalyzedPackage, PackageJson } from '../src'
 import { mkdir, rm, writeFile } from 'fs/promises'
-import { SpawnOptions } from 'child_process'
 import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
-import spawn from 'cross-spawn'
+import spawn from 'execa'
 
-function spawnAsync(args: string[], options?: SpawnOptions) {
-  const child = spawn(args[0], args.slice(1), { ...options, stdio: 'ignore' })
+function spawnAsync(args: string[], options?: spawn.Options) {
+  const child = spawn(args[0], args.slice(1), { stdio: 'ignore', ...options })
   return new Promise<number>((resolve, reject) => {
     child.on('close', resolve)
   })
