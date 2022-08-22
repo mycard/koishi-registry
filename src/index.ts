@@ -92,7 +92,7 @@ export interface SearchObject extends Extension {
   package: SearchPackage
   score: Score
   searchScore: number
-  ignore?: boolean
+  ignored?: boolean
 }
 
 export interface Score {
@@ -251,11 +251,11 @@ export default class Scanner {
           await onSuccess?.(analyzed, object)
           return analyzed
         } else {
-          object.ignore = true
+          object.ignored = true
           await onSkipped?.(name)
         }
       } catch (error) {
-        object.ignore = true
+        object.ignored = true
         await onFailure?.(name, error)
       } finally {
         this.progress += 1

@@ -132,10 +132,7 @@ async function start() {
     const dict1 = makeDict(scanner.objects)
     const dict2 = makeDict(legacy.objects)
     for (const name in { ...dict1, ...dict2 }) {
-      if (!deepEqual(dict1[name]?.package, dict2[name]?.package)) {
-        console.log(dict1[name]?.package, dict2[name]?.package)
-        return true
-      }
+      if (!deepEqual(dict1[name]?.package, dict2[name]?.package)) return true
     }
   }
 
@@ -184,12 +181,10 @@ async function start() {
     if (item.verified || !verified.has(item.shortname)) continue
     packages.splice(index, 1)
     const object = scanner.objects.find(object => object.package.name === item.name)
-    object.ignore = true
+    object.ignored = true
   }
 
   // write to file
-  scanner.objects = scanner.objects.filter(object => !object.ignore)
-  scanner.total = scanner.objects.length
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
   packages.sort((a, b) => b.score.final - a.score.final)
