@@ -7,24 +7,6 @@ import axios from 'axios'
 
 const version = '1'
 
-export function deepEqual(a: any, b: any) {
-  if (a === b) return true
-  if (typeof a !== typeof b) return false
-  if (typeof a !== 'object') return false
-  if (!a || !b) return false
-
-  // check array
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return false
-    return a.every((item, index) => deepEqual(item, b[index]))
-  } else if (Array.isArray(b)) {
-    return false
-  }
-
-  // check object
-  return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
-}
-
 async function getLegacy(dirname: string) {
   await mkdir(dirname, { recursive: true })
   try {
@@ -143,10 +125,10 @@ async function start() {
     const dict1 = makeDict(scanner.objects)
     const dict2 = makeDict(legacy.objects)
     for (const name in { ...dict1, ...dict2 }) {
-      const item1 = dict1[name]?.package
-      const item2 = dict2[name]?.package
-      if (deepEqual(item1, item2)) continue
-      console.log(`${name}: ${item1?.version} -> ${item2?.version}`)
+      const version1 = dict1[name]?.package?.version
+      const version2 = dict2[name]?.package?.version
+      if (version1 === version2) continue
+      console.log(`${name}: ${version1} -> ${version2}`)
       hasDiff = true
     }
     return hasDiff
