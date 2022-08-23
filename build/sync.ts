@@ -5,6 +5,8 @@ import { marked } from 'marked'
 import { resolve } from 'path'
 import axios from 'axios'
 
+const version = '1'
+
 export function deepEqual(a: any, b: any) {
   if (a === b) return true
   if (typeof a !== typeof b) return false
@@ -127,17 +129,30 @@ async function start() {
   const [legacy] = await Promise.all([getLegacy(dirname), scanner.collect()])
 
   function shouldUpdate() {
-    if (+new Date(scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) return true
-    if (scanner.total !== legacy.total) return true
+    if (+new Date(scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
+      console.log('update due to cache expiration')
+      return true
+    }
+
+    if (version !== legacy.version) {
+      console.log('update due to version mismatch')
+      return true
+    }
+
+    let hasDiff = false
     const dict1 = makeDict(scanner.objects)
     const dict2 = makeDict(legacy.objects)
     for (const name in { ...dict1, ...dict2 }) {
-      if (!deepEqual(dict1[name]?.package, dict2[name]?.package)) return true
+      const item1 = dict1[name]?.package
+      const item2 = dict2[name]?.package
+      if (deepEqual(item1, item2)) continue
+      console.log(`${name}: ${item1?.version} -> ${item2?.version}`)
+      hasDiff = true
     }
+    return hasDiff
   }
 
-  const isScheduled = process.env.GITHUB_EVENT_NAME === 'schedule'
-  if (isScheduled && !shouldUpdate()) return
+  if (!shouldUpdate()) return
   console.log('::set-output name=update::true')
 
   // check versions
@@ -185,6 +200,7 @@ async function start() {
   }
 
   // write to file
+  scanner.version = version
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
 
   packages.sort((a, b) => b.score.final - a.score.final)
