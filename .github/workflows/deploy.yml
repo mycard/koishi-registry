@@ -35,10 +35,6 @@ jobs:
         id: sync
         run: yarn sync
 
-      - name: Bundle
-        if: ${{ steps.sync.outputs.update }}
-        run: yarn bundle
-
       - name: Deploy assets
         if: ${{ steps.sync.outputs.update }}
         uses: actions/upload-pages-artifact@v1

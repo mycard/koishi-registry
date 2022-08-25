@@ -1,14 +1,16 @@
 import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
+import { bundleAnalyzed } from './bundle'
 import { mkdir, writeFile } from 'fs/promises'
 import { Dict, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
 import axios from 'axios'
+import pMap from 'p-map'
 
-const version = '1'
+const version = '2'
 
 async function getLegacy(dirname: string) {
-  await mkdir(dirname, { recursive: true })
+  await mkdir(dirname + '/modules', { recursive: true })
   try {
     return require(dirname) as SearchResult
   } catch {
@@ -61,6 +63,7 @@ type Subjects = 'maintenance' | 'popularity' | 'quality'
 
 const verified = [
   'koishi-plugin-dialogue',
+  'koishi-plugin-dice',
   'koishi-plugin-github',
   'koishi-plugin-gocqhttp',
   'koishi-plugin-puppeteer',
@@ -72,8 +75,8 @@ const insecure = [
 ]
 
 const weights: Record<Subjects, number> = {
-  maintenance: 0.3,
-  popularity: 0.4,
+  maintenance: 0.2,
+  popularity: 0.5,
   quality: 0.3,
 }
 
@@ -83,7 +86,7 @@ const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject)
     if (verified.includes(name)) item.verified = true
     if (item.verified) return 1
     if (insecure.some(name => item.versions[0].dependencies?.[name])) return 0
-    return 0.75
+    return 0.5
   },
   async popularity(item, object) {
     const downloads = await getDownloads(item.name)
@@ -188,6 +191,12 @@ async function start() {
   packages.sort((a, b) => b.score.final - a.score.final)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(resolve(dirname, 'market.json'), content)
+
+  // bundle packages
+  await pMap(packages, async (item) => {
+    const message = await bundleAnalyzed(item)
+    console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
+  }, { concurrency: 5 })
 }
 
 if (require.main === module) {
