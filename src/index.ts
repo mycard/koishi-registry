@@ -33,6 +33,7 @@ export interface Manifest {
   icon?: IconSvg
   hidden?: boolean
   category?: string
+  public?: string[]
   description?: Dict<string>
   service?: {
     required?: string[]

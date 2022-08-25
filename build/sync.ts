@@ -7,10 +7,10 @@ import { resolve } from 'path'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = '2'
+const version = '3'
 
 async function getLegacy(dirname: string) {
-  await mkdir(dirname + '/modules', { recursive: true })
+  await mkdir(dirname + '/x', { recursive: true })
   try {
     return require(dirname) as SearchResult
   } catch {

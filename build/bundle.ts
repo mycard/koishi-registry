@@ -1,9 +1,10 @@
 import { AnalyzedPackage, PackageJson } from '../src'
-import { mkdir, rm, writeFile } from 'fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
 import parse from 'yargs-parser'
+import globby from 'globby'
 import spawn from 'execa'
 
 function spawnAsync(args: string[], options?: spawn.Options) {
@@ -51,7 +52,6 @@ async function start(name: string, version = 'latest') {
 }
 
 async function bundle(name: string, cwd: string) {
-  const outdir = resolve(__dirname, '../dist/modules', name)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
   const result = await build({
@@ -66,23 +66,35 @@ async function bundle(name: string, cwd: string) {
     logLevel: 'silent',
     define: {
       'process.env.KOISHI_ENV': JSON.stringify('browser'),
+      'process.env.KOISHI_BASE': JSON.stringify('https://koishi.js.org/registry/x/' + name),
     },
     plugins: [{
       name: 'dep check',
       setup(build) {
         build.onResolve({ filter: /^[@/\w-]+$/ }, (args) => {
-          if (args.path in meta.peerDependencies) return { external: true }
-          return null
+          if (!meta.peerDependencies[args.path]) return null
+          return { external: true, path: 'https://koishi.js.org/registry/x/' + args.path + '/index.js' }
         })
       },
     }],
   })
 
+  const basedir = dirname(require.resolve(cwd))
+  const outdir = resolve(__dirname, '../dist/x', name)
   const { contents } = result.outputFiles[0]
-  if (contents.byteLength > 1024 * 1024) return 'size exceeded'
-  const filename = resolve(outdir, 'lib/index.js')
+  let length = contents.byteLength
+  if (length > 1024 * 1024) return 'size exceeded'
+  const filename = resolve(outdir, 'index.js')
   await mkdir(dirname(filename), { recursive: true })
   await writeFile(filename, contents)
+
+  const files = await globby(meta.koishi?.public || [], { cwd: basedir })
+  for (const file of files) {
+    const buffer = await readFile(resolve(basedir, file))
+    length += buffer.byteLength
+    if (length > 1024 * 1024) return 'size exceeded'
+    await writeFile(resolve(basedir, file), buffer)
+  }
 }
 
 if (require.main === module) {
