@@ -114,7 +114,7 @@ export interface SearchResult {
   total: number
   time: string
   objects: SearchObject[]
-  version?: string
+  version?: number
 }
 
 export interface AnalyzedPackage extends SearchPackage, Extension {
