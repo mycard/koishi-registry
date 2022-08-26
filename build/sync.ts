@@ -1,7 +1,7 @@
 import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
 import { bundleAnalyzed } from './bundle'
 import { mkdir, writeFile } from 'fs/promises'
-import { Dict, valueMap } from 'cosmokit'
+import { Dict, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
 import axios from 'axios'
@@ -102,45 +102,7 @@ const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject)
   },
 }
 
-const REFRESH_INTERVAL = 24 * 60 * 60 * 1000
-
-async function start() {
-  const scanner = new Scanner(async (url) => {
-    const { data } = await axios.get(BASE_URL + url)
-    return data
-  })
-
-  const dirname = resolve(__dirname, '../dist')
-  const [legacy] = await Promise.all([getLegacy(dirname), scanner.collect()])
-
-  const forceUpdate = version !== legacy.version
-  const dictCurrent = makeDict(scanner.objects)
-  const dictLegacy = makeDict(legacy.objects)
-  if (!shouldUpdate()) return
-  console.log('::set-output name=update::true')
-
-  function shouldUpdate() {
-    if (+new Date(scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
-      console.log('update due to cache expiration')
-      return true
-    }
-
-    if (forceUpdate) {
-      console.log('update due to version mismatch')
-      return true
-    }
-
-    let hasDiff = false
-    for (const name in { ...dictCurrent, ...dictLegacy }) {
-      const version1 = dictCurrent[name]?.package.version
-      const version2 = dictLegacy[name]?.package.version
-      if (version1 === version2) continue
-      console.log(`- ${name}: ${version1} -> ${version2}`)
-      hasDiff = true
-    }
-    return hasDiff
-  }
-
+async function analyze(scanner: Scanner) {
   // check versions
   const verified = new Set<string>()
   const packages = await scanner.analyze({
@@ -185,15 +147,71 @@ async function start() {
     object.ignored = true
   }
 
+  return packages
+}
+
+const REFRESH_INTERVAL = 24 * 60 * 60 * 1000
+
+let counter = 0
+async function step<T>(title: string, callback: () => T | Promise<T>) {
+  const startTime = Date.now()
+  console.log(`┌ Step ${++counter}: ${title}`)
+  const result = await callback()
+  console.log(`└ Completed in ${Time.format(Date.now() - startTime)}`)
+  return result
+}
+
+async function start() {
+  const scanner = new Scanner(async (url) => {
+    const { data } = await axios.get(BASE_URL + url)
+    return data
+  })
+
+  const dirname = resolve(__dirname, '../dist')
+  const [legacy] = await Promise.all([getLegacy(dirname), scanner.collect()])
+
+  const forceUpdate = version !== legacy.version
+  const dictCurrent = makeDict(scanner.objects)
+  const dictLegacy = makeDict(legacy.objects)
+  const shouldUpdate = await step('check update', () => {
+    if (+new Date(scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
+      console.log('update due to cache expiration')
+      return true
+    }
+
+    if (forceUpdate) {
+      console.log('update due to version mismatch')
+      return true
+    }
+
+    let hasDiff = false
+    for (const name in { ...dictCurrent, ...dictLegacy }) {
+      const version1 = dictCurrent[name]?.package.version
+      const version2 = dictLegacy[name]?.package.version
+      if (version1 === version2) continue
+      console.log(`- ${name}: ${version1} -> ${version2}`)
+      hasDiff = true
+    }
+    return hasDiff
+  })
+  if (!shouldUpdate) return
+  console.log('::set-output name=update::true')
+
+  const packages = await step('analyze packages', () => {
+    return analyze(scanner)
+  })
+
   // bundle packages
-  await pMap(packages, async (item) => {
-    const old = dictLegacy[item.name]
-    if (!forceUpdate && old.hasBundle !== undefined && old?.package.version === item.version) return
-    const message = await bundleAnalyzed(item)
-    console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
-    const object = scanner.objects.find(object => object.package.name === item.name)
-    object.hasBundle = item.hasBundle = !message
-  }, { concurrency: 5 })
+  await step('bundle packages', async () => {
+    await pMap(packages, async (item) => {
+      const old = dictLegacy[item.name]
+      if (!forceUpdate && old.hasBundle !== undefined && old?.package.version === item.version) return
+      const message = await bundleAnalyzed(item)
+      console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
+      const object = scanner.objects.find(object => object.package.name === item.name)
+      object.hasBundle = item.hasBundle = !message
+    }, { concurrency: 5 })
+  })
 
   // write to file
   scanner.version = version
