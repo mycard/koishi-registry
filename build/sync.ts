@@ -113,32 +113,33 @@ async function start() {
   const dirname = resolve(__dirname, '../dist')
   const [legacy] = await Promise.all([getLegacy(dirname), scanner.collect()])
 
+  const forceUpdate = version !== legacy.version
+  const dictCurrent = makeDict(scanner.objects)
+  const dictLegacy = makeDict(legacy.objects)
+  if (!shouldUpdate()) return
+  console.log('::set-output name=update::true')
+
   function shouldUpdate() {
     if (+new Date(scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
       console.log('update due to cache expiration')
       return true
     }
 
-    if (version !== legacy.version) {
+    if (forceUpdate) {
       console.log('update due to version mismatch')
       return true
     }
 
     let hasDiff = false
-    const dict1 = makeDict(scanner.objects)
-    const dict2 = makeDict(legacy.objects)
-    for (const name in { ...dict1, ...dict2 }) {
-      const version1 = dict1[name]?.package?.version
-      const version2 = dict2[name]?.package?.version
+    for (const name in { ...dictCurrent, ...dictLegacy }) {
+      const version1 = dictCurrent[name]?.package.version
+      const version2 = dictLegacy[name]?.package.version
       if (version1 === version2) continue
-      console.log(`${name}: ${version1} -> ${version2}`)
+      console.log(`- ${name}: ${version1} -> ${version2}`)
       hasDiff = true
     }
     return hasDiff
   }
-
-  if (!shouldUpdate()) return
-  console.log('::set-output name=update::true')
 
   // check versions
   const verified = new Set<string>()
@@ -184,6 +185,16 @@ async function start() {
     object.ignored = true
   }
 
+  // bundle packages
+  await pMap(packages, async (item) => {
+    const old = dictLegacy[item.name]
+    if (!forceUpdate && old.hasBundle !== undefined && old?.package.version === item.version) return
+    const message = await bundleAnalyzed(item)
+    console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
+    const object = scanner.objects.find(object => object.package.name === item.name)
+    object.hasBundle = item.hasBundle = !message
+  }, { concurrency: 5 })
+
   // write to file
   scanner.version = version
   await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
@@ -191,12 +202,6 @@ async function start() {
   packages.sort((a, b) => b.score.final - a.score.final)
   const content = JSON.stringify({ timestamp: Date.now(), packages })
   await writeFile(resolve(dirname, 'market.json'), content)
-
-  // bundle packages
-  await pMap(packages, async (item) => {
-    const message = await bundleAnalyzed(item)
-    console.log(`- ${item.name}@${item.version}: ${message || 'success'}`)
-  }, { concurrency: 5 })
 }
 
 if (require.main === module) {

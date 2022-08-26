@@ -82,6 +82,7 @@ export interface SearchPackage extends BasePackage {
 }
 
 export interface Extension {
+  hasBundle?: boolean
   publishSize?: number
   installSize?: number
   downloads?: {
@@ -234,7 +235,7 @@ export default class Scanner {
       shortname,
       versions,
       verified: official,
-      ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
+      ...pick(object, ['score', 'downloads', 'installSize', 'publishSize', 'hasBundle']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
     }

@@ -35,18 +35,7 @@ jobs:
         id: sync
         run: yarn sync
 
-      - name: Deploy assets
-        if: ${{ steps.sync.outputs.update }}
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: dist
-
-      - name: Remove files
-        if: ${{ steps.sync.outputs.update }}
-        run: |
-          rm -rf dist/plugins
-
-      - name: Deploy index
+      - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ steps.sync.outputs.update }}
         with:
@@ -58,23 +47,3 @@ jobs:
           force_orphan: true
           enable_jekyll: true
           commit_message: '[skip ci] deploy'
-
-  deploy:
-    if: ${{ needs.sync.outputs.update }}
-    needs:
-      - sync
-
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.pages_url }}
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy
-        id: deploy
-        uses: actions/deploy-pages@v1
