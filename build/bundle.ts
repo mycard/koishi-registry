@@ -1,14 +1,14 @@
 import { AnalyzedPackage, PackageJson } from '../src'
 import { mkdir, readFile, rm, writeFile } from 'fs/promises'
+import { exec, ExecOptions } from 'child_process'
 import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
 import parse from 'yargs-parser'
 import globby from 'globby'
-import spawn from 'execa'
 
-function spawnAsync(args: string[], options?: spawn.Options) {
-  const child = spawn(args[0], args.slice(1), { stdio: 'ignore', ...options })
+function spawnAsync(args: string[], options?: ExecOptions) {
+  const child = exec(args.join(' '), options)
   return new Promise<number>((resolve, reject) => {
     child.on('close', resolve)
   })
@@ -16,7 +16,7 @@ function spawnAsync(args: string[], options?: spawn.Options) {
 
 const tempDir = resolve(__dirname, '../temp')
 
-async function prepare(cwd: string, name: string, version: string) {
+async function prepareBundle(cwd: string, name: string, version: string) {
   await rm(cwd, { recursive: true, force: true })
   await mkdir(cwd, { recursive: true })
   await writeFile(cwd + '/index.js', `module.exports = require('${name}')`)
@@ -38,20 +38,21 @@ export async function bundleAnalyzed({ name, version, installSize, verified }: A
 
   const cwd = resolve(tempDir, name)
   try {
-    await prepare(cwd, name, version)
+    await prepareBundle(cwd, name, version)
   } catch (err) {
     return 'prepare failed'
   }
 
-  return bundle(name, cwd).catch(() => 'bundle failed')
+  return createBundle(name, name, cwd).catch(() => 'bundle failed')
 }
 
-async function start(name: string, version = 'latest') {
-  await prepare(tempDir, name, version)
-  await bundle(name, tempDir)
+async function bundle(name: string, outname = name, version = 'latest') {
+  const cwd = resolve(tempDir, name)
+  await prepareBundle(cwd, name, version)
+  await createBundle(name, outname, cwd)
 }
 
-async function bundle(name: string, cwd: string) {
+async function createBundle(name: string, outname: string, cwd: string) {
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
   const result = await build({
@@ -72,7 +73,7 @@ async function bundle(name: string, cwd: string) {
       name: 'dep check',
       setup(build) {
         build.onResolve({ filter: /^[@/\w-]+$/ }, (args) => {
-          if (!meta.peerDependencies[args.path]) return null
+          if (!meta.peerDependencies?.[args.path]) return null
           return { external: true, path: 'https://koishi.js.org/registry/x/' + args.path + '/index.js' }
         })
       },
@@ -80,7 +81,7 @@ async function bundle(name: string, cwd: string) {
   })
 
   const basedir = dirname(require.resolve(cwd))
-  const outdir = resolve(__dirname, '../dist/x', name)
+  const outdir = resolve(__dirname, '../dist/x', outname)
   const { contents } = result.outputFiles[0]
   let length = contents.byteLength
   if (length > 1024 * 1024) return 'size exceeded'
@@ -92,7 +93,10 @@ async function bundle(name: string, cwd: string) {
   for (const file of files) {
     const buffer = await readFile(resolve(basedir, file))
     length += buffer.byteLength
-    if (length > 1024 * 1024) return 'size exceeded'
+    if (length > 1024 * 1024) {
+      await rm(outdir, { recursive: true, force: true })
+      return 'size exceeded'
+    }
     await writeFile(resolve(basedir, file), buffer)
   }
 }
@@ -100,5 +104,5 @@ async function bundle(name: string, cwd: string) {
 if (require.main === module) {
   const argv = parse(process.argv.slice(2))
   if (!argv._.length) throw new Error('package name required')
-  start('' + argv._[0])
+  bundle('' + argv._[0])
 }

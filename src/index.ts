@@ -192,7 +192,7 @@ export default class Scanner {
 
   private async search(offset: number, config: CollectConfig) {
     const { step = 250, timeout = Time.second * 30 } = config
-    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&offset=${offset}`, { timeout })
+    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi&size=${step}&offset=${offset}`, { timeout })
     this.objects.push(...result.objects)
     return result.total
   }
