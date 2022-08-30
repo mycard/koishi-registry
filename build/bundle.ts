@@ -67,21 +67,21 @@ async function createBundle(name: string, outname: string, cwd: string) {
     logLevel: 'silent',
     define: {
       'process.env.KOISHI_ENV': JSON.stringify('browser'),
-      'process.env.KOISHI_BASE': JSON.stringify('https://koishi.js.org/registry/x/' + name),
+      'process.env.KOISHI_BASE': JSON.stringify('https://koishi.js.org/registry/modules/' + name),
     },
     plugins: [{
       name: 'dep check',
       setup(build) {
         build.onResolve({ filter: /^[@/\w-]+$/ }, (args) => {
           if (!meta.peerDependencies?.[args.path]) return null
-          return { external: true, path: 'https://koishi.js.org/registry/x/' + args.path + '/index.js' }
+          return { external: true, path: 'https://koishi.js.org/registry/modules/' + args.path + '/index.js' }
         })
       },
     }],
   })
 
   const basedir = dirname(require.resolve(cwd))
-  const outdir = resolve(__dirname, '../dist/x', outname)
+  const outdir = resolve(__dirname, '../dist/modules', outname)
   const { contents } = result.outputFiles[0]
   let length = contents.byteLength
   if (length > 1024 * 1024) return 'size exceeded'

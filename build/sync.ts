@@ -10,7 +10,7 @@ import pMap from 'p-map'
 const version = 4
 
 async function getLegacy(dirname: string) {
-  await mkdir(dirname + '/x', { recursive: true })
+  await mkdir(dirname + '/modules', { recursive: true })
   try {
     return require(dirname) as SearchResult
   } catch {
@@ -118,7 +118,12 @@ async function start() {
   })
 
   const dirname = resolve(__dirname, '../dist')
-  const [legacy] = await Promise.all([getLegacy(dirname), scanner.collect()])
+  const [legacy] = await Promise.all([
+    getLegacy(dirname),
+    scanner.collect({
+      extra: ['koishi'],
+    }),
+  ])
 
   const forceUpdate = version !== legacy.version
   const dictCurrent = makeDict(scanner.objects)
@@ -136,10 +141,16 @@ async function start() {
 
     let hasDiff = false
     for (const name in { ...dictCurrent, ...dictLegacy }) {
-      const version1 = dictCurrent[name]?.package.version
-      const version2 = dictLegacy[name]?.package.version
+      const version1 = dictLegacy[name]?.package.version
+      const version2 = dictCurrent[name]?.package.version
       if (version1 === version2) continue
-      console.log(`│ ${name}: ${version1} -> ${version2}`)
+      if (!version1) {
+        console.log(`│ + ${name}: ${version2}`)
+      } else if (!version2) {
+        console.log(`│ - ${name}: ${version1}`)
+      } else {
+        console.log(`│ * ${name}: ${version1} -> ${version2}`)
+      }
       hasDiff = true
     }
     if (!hasDiff) {

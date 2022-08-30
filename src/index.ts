@@ -129,6 +129,7 @@ export interface AnalyzedPackage extends SearchPackage, Extension {
 export interface CollectConfig {
   step?: number
   timeout?: number
+  extra?: string[]
 }
 
 export interface AnalyzeConfig {
@@ -201,18 +202,22 @@ export default class Scanner {
     const { step = 250 } = config
     this.objects = []
     this.time = new Date().toUTCString()
-    this.total = await this.search(0, config)
-    for (let offset = this.objects.length; offset < this.total; offset += step) {
+    const total = await this.search(0, config)
+    for (let offset = this.objects.length; offset < total; offset += step) {
       await this.search(offset, config)
     }
+    this.objects = this.objects.filter((object) => {
+      const { name } = object.package
+      const official = /^@koishijs\/plugin-.+/.test(name)
+      const community = /(^|\/)koishi-plugin-.+/.test(name)
+      return official || community || config.extra?.includes(name)
+    })
+    this.total = this.objects.length
   }
 
   public async process(object: SearchObject, range: string) {
     const { name } = object.package
     const official = name.startsWith('@koishijs/plugin-')
-    const community = name.startsWith('koishi-plugin-')
-    if (!official && !community) return
-
     const registry = await this.request<Registry>(`/${name}`)
     const versions = Object.values(registry.versions).filter((remote) => {
       const { peerDependencies = {}, deprecated } = remote
