@@ -61,6 +61,14 @@ function softmax(x: number) {
 
 type Subjects = 'maintenance' | 'popularity' | 'quality'
 
+const sharedDeps = [
+  'koishi',
+]
+
+const insecureDeps = [
+  'koishi-thirdeye',
+]
+
 const additional = [
   'koishi-plugin-dialogue',
   'koishi-plugin-dice',
@@ -68,10 +76,6 @@ const additional = [
   'koishi-plugin-gocqhttp',
   'koishi-plugin-puppeteer',
   'koishi-plugin-screenshot',
-]
-
-const insecure = [
-  'koishi-thirdeye',
 ]
 
 const weights: Record<Subjects, number> = {
@@ -83,7 +87,7 @@ const weights: Record<Subjects, number> = {
 const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
   async maintenance(item, object) {
     if (item.verified) return 1
-    if (insecure.some(name => item.versions[0].dependencies?.[name])) return 0
+    if (insecureDeps.some(name => item.versions[0].dependencies?.[name])) return 0
     return object.hasBundle ? 0.75 : 0.5
   },
   async popularity(item, object) {
@@ -111,38 +115,51 @@ async function step<T>(title: string, callback: () => T | Promise<T>) {
   return result
 }
 
-async function start() {
-  const scanner = new Scanner(async (url) => {
+const outdir = resolve(__dirname, '../dist')
+
+class Synchronizer {
+  private forceUpdate: boolean
+  private latest: Dict<SearchObject>
+  private legacy: Dict<SearchObject>
+  private packages: AnalyzedPackage[]
+  private scanner = new Scanner(async (url) => {
     const { data } = await axios.get(BASE_URL + url)
     return data
   })
 
-  const outdir = resolve(__dirname, '../dist')
-  const [legacy] = await Promise.all([
-    getLegacy(outdir),
-    scanner.collect({
-      extra: ['koishi'],
-    }),
-  ])
+  async start() {
+    const shouldUpdate = await step('check update', () => this.check())
+    if (!shouldUpdate) return
+    console.log('::set-output name=update::true')
 
-  const forceUpdate = version !== legacy.version
-  const dictCurrent = makeDict(scanner.objects)
-  const dictLegacy = makeDict(legacy.objects)
-  const shouldUpdate = await step('check update', () => {
-    if (+new Date(scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
+    await step('analyze packages', () => this.analyze())
+    await step('bundle packages', () => this.bundle())
+    await step('write index', () => this.write())
+  }
+
+  async check() {
+    const [legacy] = await Promise.all([
+      getLegacy(outdir),
+      this.scanner.collect({ extra: sharedDeps }),
+    ])
+
+    this.forceUpdate = version !== legacy.version
+    this.latest = makeDict(this.scanner.objects)
+    this.legacy = makeDict(legacy.objects)
+    if (+new Date(this.scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
       console.log('│ update due to cache expiration')
       return true
     }
 
-    if (forceUpdate) {
+    if (this.forceUpdate) {
       console.log('│ update due to version mismatch')
       return true
     }
 
     let hasDiff = false
-    for (const name in { ...dictCurrent, ...dictLegacy }) {
-      const version1 = dictLegacy[name]?.package.version
-      const version2 = dictCurrent[name]?.package.version
+    for (const name in { ...this.latest, ...this.legacy }) {
+      const version1 = this.legacy[name]?.package.version
+      const version2 = this.latest[name]?.package.version
       if (version1 === version2) continue
       if (!version1) {
         console.log(`│ + ${name}: ${version2}`)
@@ -157,15 +174,12 @@ async function start() {
       console.log('│ all packages are up-to-date')
     }
     return hasDiff
-  })
+  }
 
-  if (!shouldUpdate) return
-  console.log('::set-output name=update::true')
-
-  const packages = await step('analyze packages', async () => {
+  async analyze() {
     // check versions
     const verified = new Set<string>()
-    const packages = await scanner.analyze({
+    this.packages = await this.scanner.analyze({
       version: '4',
       async onSuccess(item) {
         if (additional.includes(item.name)) item.verified = true
@@ -177,58 +191,69 @@ async function start() {
     })
 
     // resolve name conflicts
-    for (let index = packages.length - 1; index >= 0; index--) {
-      const item = packages[index]
+    for (let index = this.packages.length - 1; index >= 0; index--) {
+      const item = this.packages[index]
       if (item.verified || !verified.has(item.shortname)) continue
-      packages.splice(index, 1)
+      this.packages.splice(index, 1)
       item.object.ignored = true
     }
-    return packages
-  })
+  }
 
-  // bundle packages
-  await step('bundle packages', () => pMap(packages, async (item) => {
-    const old = dictLegacy[item.name]
-    if (!forceUpdate && old?.hasBundle !== undefined && old?.package.version === item.version) {
-      item.object.hasBundle = item.hasBundle = old.hasBundle
-      item.score = old.score
-    } else {
-      // bundle package
-      const message = await bundleAnalyzed(item)
-      console.log(`│ ${item.name}@${item.version}: ${message || 'success'}`)
-      item.object.hasBundle = item.hasBundle = !message
+  shouldBundle(name: string) {
+    if (this.forceUpdate) return true
+    const legacy = this.legacy[name]?.package.version
+    const latest = this.latest[name]?.package.version
+    return legacy !== latest || this.legacy[name]?.hasBundle === undefined
+  }
 
-      // evaluate score
-      item.score.final = 0
-      await Promise.all(Object.keys(weights).map(async (subject) => {
-        let value = 0
-        try {
-          value = await evaluators[subject](item, item.object)
-        } catch (e) {
-          console.log('│ Failed to evaluate %s of %s', subject, item.object.package.name)
-        }
-        item.score.detail[subject] = value
-        item.score.final += weights[subject] * value
-      }))
+  async bundle() {
+    await pMap(this.packages, async (item) => {
+      const legacy = this.legacy[item.name]
+      if (!this.shouldBundle(item.name)) {
+        item.object.hasBundle = item.hasBundle = legacy.hasBundle
+        item.score = legacy.score
+      } else {
+        // bundle package
+        const message = await bundleAnalyzed(item)
+        console.log(`│ ${item.name}@${item.version}: ${message || 'success'}`)
+        item.object.hasBundle = item.hasBundle = !message
+
+        // evaluate score
+        item.score.final = 0
+        await Promise.all(Object.keys(weights).map(async (subject) => {
+          let value = 0
+          try {
+            value = await evaluators[subject](item, item.object)
+          } catch (e) {
+            console.log('│ Failed to evaluate %s of %s', subject, item.object.package.name)
+          }
+          item.score.detail[subject] = value
+          item.score.final += weights[subject] * value
+        }))
+      }
+
+      // we don't need version details
+      item.versions = undefined
+
+      // pre-render markdown description
+      item.manifest.description = valueMap(item.manifest.description, text => marked
+        .parseInline(text)
+        .replace('<a ', '<a target="_blank" rel="noopener noreferrer" '))
+    }, { concurrency: 5 })
+
+    for (const name of sharedDeps) {
+      if (!this.shouldBundle(name)) continue
+      // TODO
+      await bundle('@koishijs/core', name)
     }
+  }
 
-    // we don't need version details
-    item.versions = undefined
+  async write() {
+    this.scanner.version = version
+    await writeFile(resolve(outdir, 'index.json'), JSON.stringify(this.scanner))
 
-    // pre-render markdown description
-    item.manifest.description = valueMap(item.manifest.description, text => marked
-      .parseInline(text)
-      .replace('<a ', '<a target="_blank" rel="noopener noreferrer" '))
-  }, { concurrency: 5 }))
-
-  await bundle('@koishijs/core', 'koishi')
-
-  await step('write index', async () => {
-    scanner.version = version
-    await writeFile(resolve(outdir, 'index.json'), JSON.stringify(scanner))
-
-    packages.sort((a, b) => b.score.final - a.score.final)
-    const content = JSON.stringify({ timestamp: Date.now(), packages })
+    this.packages.sort((a, b) => b.score.final - a.score.final)
+    const content = JSON.stringify({ timestamp: Date.now(), packages: this.packages })
     await writeFile(resolve(outdir, 'market.json'), content)
 
     // remove unused packages
@@ -242,12 +267,12 @@ async function start() {
       }
     }
     for (const folder of folders) {
-      if (folder === 'koishi' || packages.find(item => item.name === folder)) continue
+      if (sharedDeps.includes(folder) || this.packages.find(item => item.name === folder)) continue
       await rm(outdir + '/modules/' + folder, { recursive: true, force: true })
     }
-  })
+  }
 }
 
 if (require.main === module) {
-  start()
+  new Synchronizer().start()
 }
