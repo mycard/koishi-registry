@@ -1,13 +1,14 @@
 import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
-import { bundle, bundleAnalyzed } from './bundle'
+import { bundle, prepare } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { Dict, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
+import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 4
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -115,6 +116,16 @@ async function step<T>(title: string, callback: () => T | Promise<T>) {
   return result
 }
 
+const log = (text: string) => console.log('│ ' + text)
+
+async function catchError<T>(message: string, callback: () => T | Promise<T>) {
+  try {
+    await callback()
+  } catch {
+    return message
+  }
+}
+
 const outdir = resolve(__dirname, '../dist')
 
 class Synchronizer {
@@ -133,8 +144,8 @@ class Synchronizer {
     console.log('::set-output name=update::true')
 
     await step('analyze packages', () => this.analyze())
-    await step('bundle packages', () => this.bundle())
-    await step('write index', () => this.write())
+    await step('bundle packages', () => this.bundleAll())
+    await step('generate output', () => this.generate())
   }
 
   async check() {
@@ -143,16 +154,16 @@ class Synchronizer {
       this.scanner.collect({ extra: sharedDeps }),
     ])
 
-    this.forceUpdate = version !== legacy.version
     this.latest = makeDict(this.scanner.objects)
     this.legacy = makeDict(legacy.objects)
-    if (+new Date(this.scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
-      console.log('│ update due to cache expiration')
+    this.forceUpdate = version !== legacy.version
+    if (this.forceUpdate) {
+      log('force update due to version mismatch')
       return true
     }
 
-    if (this.forceUpdate) {
-      console.log('│ update due to version mismatch')
+    if (+new Date(this.scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
+      log('force update due to cache expiration')
       return true
     }
 
@@ -162,16 +173,16 @@ class Synchronizer {
       const version2 = this.latest[name]?.package.version
       if (version1 === version2) continue
       if (!version1) {
-        console.log(`│ + ${name}: ${version2}`)
+        log(kleur.green(`+ ${name}: ${version2}`))
       } else if (!version2) {
-        console.log(`│ - ${name}: ${version1}`)
+        log(kleur.red(` - ${name}: ${version1}`))
       } else {
-        console.log(`│ * ${name}: ${version1} -> ${version2}`)
+        log(kleur.yellow(` * ${name}: ${version1} -> ${version2}`))
       }
       hasDiff = true
     }
     if (!hasDiff) {
-      console.log('│ all packages are up-to-date')
+      log('all packages are up-to-date')
     }
     return hasDiff
   }
@@ -206,7 +217,19 @@ class Synchronizer {
     return legacy !== latest || this.legacy[name]?.hasBundle === undefined
   }
 
-  async bundle() {
+  async bundle(name: string, outname: string) {
+    const { version } = this.latest[outname].package
+    return ''
+      || await catchError('prepare failed', () => prepare(name, version))
+      || await catchError('bundle failed', () => bundle(name, outname))
+  }
+
+  async bundleAnalyzed({ name, installSize, verified }: AnalyzedPackage) {
+    if (installSize > 5 * 1024 * 1024 && !verified) return 'size exceeded'
+    return this.bundle(name, name)
+  }
+
+  async bundleAll() {
     await pMap(this.packages, async (item) => {
       const legacy = this.legacy[item.name]
       if (!this.shouldBundle(item.name)) {
@@ -214,8 +237,12 @@ class Synchronizer {
         item.score = legacy.score
       } else {
         // bundle package
-        const message = await bundleAnalyzed(item)
-        console.log(`│ ${item.name}@${item.version}: ${message || 'success'}`)
+        const message = await this.bundleAnalyzed(item)
+        if (message) {
+          log(kleur.red(`${item.name}@${item.version}: ${message}`))
+        } else {
+          log(kleur.green(`${item.name}@${item.version}: success`))
+        }
         item.object.hasBundle = item.hasBundle = !message
 
         // evaluate score
@@ -242,13 +269,16 @@ class Synchronizer {
     }, { concurrency: 5 })
 
     for (const name of sharedDeps) {
-      if (!this.shouldBundle(name)) continue
-      // TODO
-      await bundle('@koishijs/core', name)
+      if (!this.shouldBundle(name)) {
+        this.latest[name].hasBundle = this.legacy[name].hasBundle
+      } else {
+        const message = await this.bundle('@koishijs/core', name)
+        this.latest[name].hasBundle = !message
+      }
     }
   }
 
-  async write() {
+  async generate() {
     this.scanner.version = version
     await writeFile(resolve(outdir, 'index.json'), JSON.stringify(this.scanner))
 
@@ -262,7 +292,6 @@ class Synchronizer {
       const folder = folders[index]
       if (folder.startsWith('@')) {
         const subfolders = await readdir(outdir + '/modules/' + folder)
-        console.log(subfolders)
         folders.splice(index, 1, ...subfolders.map(name => folder + '/' + name))
       }
     }
