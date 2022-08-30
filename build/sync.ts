@@ -1,6 +1,6 @@
 import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
 import { bundleAnalyzed } from './bundle'
-import { mkdir, writeFile } from 'fs/promises'
+import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { Dict, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
@@ -117,9 +117,9 @@ async function start() {
     return data
   })
 
-  const dirname = resolve(__dirname, '../dist')
+  const outdir = resolve(__dirname, '../dist')
   const [legacy] = await Promise.all([
-    getLegacy(dirname),
+    getLegacy(outdir),
     scanner.collect({
       extra: ['koishi'],
     }),
@@ -148,6 +148,7 @@ async function start() {
         console.log(`│ + ${name}: ${version2}`)
       } else if (!version2) {
         console.log(`│ - ${name}: ${version1}`)
+        // TODO remove from legacy
       } else {
         console.log(`│ * ${name}: ${version1} -> ${version2}`)
       }
@@ -177,14 +178,12 @@ async function start() {
     })
 
     // resolve name conflicts
-    console.log(packages.length)
     for (let index = packages.length - 1; index >= 0; index--) {
       const item = packages[index]
       if (item.verified || !verified.has(item.shortname)) continue
       packages.splice(index, 1)
       item.object.ignored = true
     }
-    console.log(packages.length)
     return packages
   })
 
@@ -225,11 +224,25 @@ async function start() {
 
   await step('write index', async () => {
     scanner.version = version
-    await writeFile(resolve(dirname, 'index.json'), JSON.stringify(scanner))
+    await writeFile(resolve(outdir, 'index.json'), JSON.stringify(scanner))
 
     packages.sort((a, b) => b.score.final - a.score.final)
     const content = JSON.stringify({ timestamp: Date.now(), packages })
-    await writeFile(resolve(dirname, 'market.json'), content)
+    await writeFile(resolve(outdir, 'market.json'), content)
+
+    // remove unused packages
+    const folders = await readdir(outdir + '/modules')
+    for (let index = folders.length - 1; index > 0; index--) {
+      const folder = folders[index]
+      if (folder.startsWith('@')) {
+        const subfolders = await readdir(outdir + '/modules/' + folder)
+        folders.splice(index, 1, ...subfolders.map(name => folder + '/' + name))
+      }
+    }
+    for (const folder of folders) {
+      if (packages.find(item => item.name === folder)) continue
+      await rm(outdir + '/modules/' + folder, { recursive: true, force: true })
+    }
   })
 }
 

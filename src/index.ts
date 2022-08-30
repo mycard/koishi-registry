@@ -194,7 +194,7 @@ export default class Scanner {
 
   private async search(offset: number, config: CollectConfig) {
     const { step = 250, timeout = Time.second * 30 } = config
-    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi&size=${step}&offset=${offset}`, { timeout })
+    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi&size=${step}&from=${offset}`, { timeout })
     this.objects.push(...result.objects)
     return result.total
   }
@@ -203,8 +203,8 @@ export default class Scanner {
     const { step = 250 } = config
     this.objects = []
     this.time = new Date().toUTCString()
-    const total = await this.search(0, config)
-    for (let offset = this.objects.length; offset < total; offset += step) {
+    this.total = await this.search(0, config)
+    for (let offset = this.objects.length; offset < this.total; offset += step) {
       await this.search(offset, config)
     }
     this.objects = this.objects.filter((object) => {
