@@ -14,13 +14,23 @@ export interface BasePackage {
   description: string
 }
 
-export interface PackageJson extends BasePackage {
+export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
+
+export interface PackageJson extends BasePackage, Partial<Record<DependencyType, Record<string, string>>> {
+  main?: string
+  module?: string
+  bin?: string | Dict<string>
+  exports?: PackageJson.Exports
   koishi?: Manifest
   keywords: string[]
   dependencies?: Dict<string>
   devDependencies?: Dict<string>
   peerDependencies?: Dict<string>
   optionalDependencies?: Dict<string>
+}
+
+export namespace PackageJson {
+  export type Exports = string | { [key: string]: Exports }
 }
 
 export interface IconSvg {

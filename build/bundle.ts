@@ -19,17 +19,14 @@ const tempDir = resolve(__dirname, '../temp')
 async function prepareBundle(cwd: string, name: string, version: string) {
   await rm(cwd, { recursive: true, force: true })
   await mkdir(cwd, { recursive: true })
-  await writeFile(cwd + '/index.js', `module.exports = require('${name}')`)
+  await writeFile(cwd + '/index.js', '')
   await writeFile(cwd + '/package.json', JSON.stringify({
     dependencies: {
       [name]: version,
     },
-    browser: {
-      path: false,
-    },
   }))
 
-  const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps'], { cwd })
+  const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps', '--registry', 'https://'], { cwd })
   if (code) throw new Error('npm install failed')
 }
 
@@ -46,17 +43,36 @@ export async function bundleAnalyzed({ name, version, installSize, verified }: A
   return createBundle(name, name, cwd).catch(() => 'bundle failed')
 }
 
-async function bundle(name: string, outname = name, version = 'latest') {
+export async function bundle(name: string, outname = name, version = 'latest') {
   const cwd = resolve(tempDir, name)
   await prepareBundle(cwd, name, version)
   await createBundle(name, outname, cwd)
 }
 
+function locateEntry(meta: PackageJson) {
+  if (typeof meta.exports === 'string') {
+    return meta.exports
+  } else if (meta.exports) {
+    const entry = meta.exports['.']
+    if (typeof entry === 'string') {
+      return entry
+    } else {
+      const result = entry.browser || entry.import || entry.default
+      if (typeof result === 'string') return result
+    }
+  }
+  const result = meta.module || meta.main
+  if (typeof result === 'string') return result
+}
+
 async function createBundle(name: string, outname: string, cwd: string) {
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
+  const entry = locateEntry(meta)
+  if (!entry) return 'no entry'
+  const basedir = dirname(require.resolve(name + '/package.json'))
   const result = await build({
-    entryPoints: [cwd + '/index.js'],
+    entryPoints: [resolve(basedir, entry)],
     bundle: true,
     minify: true,
     write: false,
@@ -80,7 +96,6 @@ async function createBundle(name: string, outname: string, cwd: string) {
     }],
   })
 
-  const basedir = dirname(require.resolve(cwd))
   const outdir = resolve(__dirname, '../dist/modules', outname)
   const { contents } = result.outputFiles[0]
   let length = contents.byteLength

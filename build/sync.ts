@@ -1,5 +1,5 @@
 import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
-import { bundleAnalyzed } from './bundle'
+import { bundle, bundleAnalyzed } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { Dict, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
@@ -7,7 +7,7 @@ import { resolve } from 'path'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 5
+const version = 4
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -148,7 +148,6 @@ async function start() {
         console.log(`│ + ${name}: ${version2}`)
       } else if (!version2) {
         console.log(`│ - ${name}: ${version1}`)
-        // TODO remove from legacy
       } else {
         console.log(`│ * ${name}: ${version1} -> ${version2}`)
       }
@@ -190,7 +189,7 @@ async function start() {
   // bundle packages
   await step('bundle packages', () => pMap(packages, async (item) => {
     const old = dictLegacy[item.name]
-    if (!forceUpdate && old.hasBundle !== undefined && old?.package.version === item.version) {
+    if (!forceUpdate && old?.hasBundle !== undefined && old?.package.version === item.version) {
       item.object.hasBundle = item.hasBundle = old.hasBundle
       item.score = old.score
     } else {
@@ -222,6 +221,8 @@ async function start() {
       .replace('<a ', '<a target="_blank" rel="noopener noreferrer" '))
   }, { concurrency: 5 }))
 
+  await bundle('@koishijs/core', 'koishi')
+
   await step('write index', async () => {
     scanner.version = version
     await writeFile(resolve(outdir, 'index.json'), JSON.stringify(scanner))
@@ -236,11 +237,12 @@ async function start() {
       const folder = folders[index]
       if (folder.startsWith('@')) {
         const subfolders = await readdir(outdir + '/modules/' + folder)
+        console.log(subfolders)
         folders.splice(index, 1, ...subfolders.map(name => folder + '/' + name))
       }
     }
     for (const folder of folders) {
-      if (packages.find(item => item.name === folder)) continue
+      if (folder === 'koishi' || packages.find(item => item.name === folder)) continue
       await rm(outdir + '/modules/' + folder, { recursive: true, force: true })
     }
   })
