@@ -7,7 +7,7 @@ import { resolve } from 'path'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 4
+const version = 5
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -177,48 +177,51 @@ async function start() {
     })
 
     // resolve name conflicts
+    console.log(packages.length)
     for (let index = packages.length - 1; index >= 0; index--) {
       const item = packages[index]
       if (item.verified || !verified.has(item.shortname)) continue
       packages.splice(index, 1)
-      const object = scanner.objects.find(object => object.package.name === item.name)
-      object.ignored = true
+      item.object.ignored = true
     }
+    console.log(packages.length)
     return packages
   })
 
   // bundle packages
-  await step('bundle packages', async () => {
-    await pMap(packages, async (item) => {
-      const old = dictLegacy[item.name]
-      if (!forceUpdate && old.hasBundle !== undefined && old?.package.version === item.version) return
+  await step('bundle packages', () => pMap(packages, async (item) => {
+    const old = dictLegacy[item.name]
+    if (!forceUpdate && old.hasBundle !== undefined && old?.package.version === item.version) {
+      item.object.hasBundle = item.hasBundle = old.hasBundle
+      item.score = old.score
+    } else {
+      // bundle package
       const message = await bundleAnalyzed(item)
       console.log(`│ ${item.name}@${item.version}: ${message || 'success'}`)
-      const object = scanner.objects.find(object => object.package.name === item.name)
-      object.hasBundle = item.hasBundle = !message
+      item.object.hasBundle = item.hasBundle = !message
 
       // evaluate score
-      object.score.final = 0
+      item.score.final = 0
       await Promise.all(Object.keys(weights).map(async (subject) => {
         let value = 0
         try {
-          value = await evaluators[subject](item, object)
+          value = await evaluators[subject](item, item.object)
         } catch (e) {
-          console.log('│ Failed to evaluate %s of %s', subject, object.package.name)
+          console.log('│ Failed to evaluate %s of %s', subject, item.object.package.name)
         }
-        object.score.detail[subject] = value
-        object.score.final += weights[subject] * value
+        item.score.detail[subject] = value
+        item.score.final += weights[subject] * value
       }))
+    }
 
-      // we don't need version details
-      item.versions = undefined
+    // we don't need version details
+    item.versions = undefined
 
-      // pre-render markdown description
-      item.manifest.description = valueMap(item.manifest.description, text => marked
-        .parseInline(text)
-        .replace('<a ', '<a target="_blank" rel="noopener noreferrer" '))
-    }, { concurrency: 5 })
-  })
+    // pre-render markdown description
+    item.manifest.description = valueMap(item.manifest.description, text => marked
+      .parseInline(text)
+      .replace('<a ', '<a target="_blank" rel="noopener noreferrer" '))
+  }, { concurrency: 5 }))
 
   await step('write index', async () => {
     scanner.version = version

@@ -124,6 +124,7 @@ export interface AnalyzedPackage extends SearchPackage, Extension {
   versions: RemotePackage[]
   manifest: Manifest
   score: Score
+  object?: SearchObject
 }
 
 export interface CollectConfig {
@@ -244,6 +245,7 @@ export default class Scanner {
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
     }
+    defineProperty(analyzed, 'object', object)
     return analyzed
   }
 
