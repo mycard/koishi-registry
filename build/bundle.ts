@@ -1,5 +1,5 @@
 import { PackageJson } from '../src'
-import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { exec, ExecOptions } from 'child_process'
 import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
@@ -25,13 +25,16 @@ export async function prepare(name: string, version: string) {
     dependencies: {
       [name]: version,
     },
+    browser: {
+      path: false,
+    },
   }))
 
   const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps', '--registry', 'https://'], { cwd })
   if (code) throw new Error('npm install failed')
 }
 
-function locateEntry(meta: PackageJson) {
+export function locateEntry(meta: PackageJson) {
   if (typeof meta.exports === 'string') {
     return meta.exports
   } else if (meta.exports) {
@@ -43,6 +46,7 @@ function locateEntry(meta: PackageJson) {
       if (typeof result === 'string') return result
     }
   }
+  return meta.module
 }
 
 export async function bundle(name: string, outname: string) {
@@ -51,7 +55,6 @@ export async function bundle(name: string, outname: string) {
   const meta: PackageJson = require(name + '/package.json')
   const entry = locateEntry(meta)
   if (!entry) return 'no entry'
-  console.log(outname)
   const basedir = dirname(require.resolve(name + '/package.json'))
   const result = await build({
     entryPoints: [resolve(basedir, entry)],
@@ -99,7 +102,6 @@ export async function bundle(name: string, outname: string) {
     await mkdir(dirname(filename), { recursive: true })
     await writeFile(filename, buffer)
   }
-  console.log(await readdir(resolve(__dirname, '../dist/modules')))
 }
 
 if (require.main === module) {
@@ -108,6 +110,6 @@ if (require.main === module) {
   const name = '' + argv._[0]
   Promise.resolve().then(async () => {
     await prepare(name, 'latest')
-    await bundle(name, name)
+    console.log(await bundle(name, name) || 'success')
   })
 }

@@ -1,5 +1,5 @@
 import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
-import { bundle, prepare } from './bundle'
+import { bundle, locateEntry, prepare } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { Dict, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 3
+const version = 4
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -88,7 +88,8 @@ const weights: Record<Subjects, number> = {
 const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
   async maintenance(item, object) {
     if (item.verified) return 1
-    if (insecureDeps.some(name => item.versions[0].dependencies?.[name])) return 0
+    const meta = item.versions.find(v => v.version === item.version)
+    if (insecureDeps.some(name => meta.dependencies?.[name])) return 0
     return object.hasBundle ? 0.75 : 0.5
   },
   async popularity(item, object) {
@@ -120,8 +121,9 @@ const log = (text: string) => console.log('│ ' + text)
 
 async function catchError<T>(message: string, callback: () => T | Promise<T>) {
   try {
-    await callback()
-  } catch {
+    return await callback()
+  } catch (error) {
+    console.log(error)
     return message
   }
 }
@@ -175,9 +177,9 @@ class Synchronizer {
       if (!version1) {
         log(kleur.green(`+ ${name}: ${version2}`))
       } else if (!version2) {
-        log(kleur.red(` - ${name}: ${version1}`))
+        log(kleur.red(`- ${name}: ${version1}`))
       } else {
-        log(kleur.yellow(` * ${name}: ${version1} -> ${version2}`))
+        log(kleur.yellow(`* ${name}: ${version1} -> ${version2}`))
       }
       hasDiff = true
     }
@@ -217,16 +219,21 @@ class Synchronizer {
     return legacy !== latest || this.legacy[name]?.hasBundle === undefined
   }
 
-  async bundle(name: string, outname: string) {
+  async bundle(name: string, outname: string, message = '') {
     const { version } = this.latest[outname].package
-    return ''
+    const meta = this.packages
+      .find(item => item.name === outname)?.versions
+      .find(item => item.version === version)
+    if (!message && meta && !locateEntry(meta)) message = 'no entry'
+    message = message
       || await catchError('prepare failed', () => prepare(name, version))
       || await catchError('bundle failed', () => bundle(name, outname))
-  }
-
-  async bundleAnalyzed({ name, installSize, verified }: AnalyzedPackage) {
-    if (installSize > 5 * 1024 * 1024 && !verified) return 'size exceeded'
-    return this.bundle(name, name)
+    if (message) {
+      log(kleur.red(`${outname}@${version}: ${message}`))
+    } else {
+      log(kleur.green(`${outname}@${version}: success`))
+    }
+    return !message
   }
 
   async bundleAll() {
@@ -237,13 +244,11 @@ class Synchronizer {
         item.score = legacy.score
       } else {
         // bundle package
-        const message = await this.bundleAnalyzed(item)
-        if (message) {
-          log(kleur.red(`${item.name}@${item.version}: ${message}`))
-        } else {
-          log(kleur.green(`${item.name}@${item.version}: success`))
+        let message = ''
+        if (item.installSize > 5 * 1024 * 1024 && !item.verified) {
+          message = 'size exceeded'
         }
-        item.object.hasBundle = item.hasBundle = !message
+        item.object.hasBundle = item.hasBundle = await this.bundle(item.name, item.name, message)
 
         // evaluate score
         item.score.final = 0
@@ -288,7 +293,7 @@ class Synchronizer {
 
     // remove unused packages
     const folders = await readdir(outdir + '/modules')
-    for (let index = folders.length - 1; index > 0; index--) {
+    for (let index = folders.length - 1; index >= 0; index--) {
       const folder = folders[index]
       if (folder.startsWith('@')) {
         const subfolders = await readdir(outdir + '/modules/' + folder)
@@ -296,7 +301,8 @@ class Synchronizer {
       }
     }
     for (const folder of folders) {
-      if (sharedDeps.includes(folder) || this.packages.find(item => item.name === folder)) continue
+      if (sharedDeps.includes(folder)) continue
+      if (this.packages.find(item => item.name === folder && item.hasBundle)) continue
       await rm(outdir + '/modules/' + folder, { recursive: true, force: true })
     }
   }
