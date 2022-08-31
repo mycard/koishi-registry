@@ -49,6 +49,19 @@ export function locateEntry(meta: PackageJson) {
   return meta.module
 }
 
+export const sharedDeps = [
+  'koishi',
+  '@koishijs/helpers',
+]
+
+const redirects = [
+  'vue.js',
+  'vue-router.js',
+  'vueuse.js',
+  'client.js',
+  'element.js',
+]
+
 export async function bundle(name: string, outname: string, verified = false) {
   const cwd = resolve(tempDir, name)
   const require = createRequire(cwd + '/package.json')
@@ -74,7 +87,7 @@ export async function bundle(name: string, outname: string, verified = false) {
       name: 'dep check',
       setup(build) {
         build.onResolve({ filter: /^[@/\w-]+$/ }, (args) => {
-          if (!meta.peerDependencies?.[args.path]) return null
+          if (!sharedDeps.includes(args.path) && !meta.peerDependencies?.[args.path]) return null
           return { external: true, path: 'https://koishi.js.org/registry/modules/' + args.path + '/index.js' }
         })
       },
@@ -102,19 +115,14 @@ export async function bundle(name: string, outname: string, verified = false) {
     await mkdir(dirname(filename), { recursive: true })
     await writeFile(filename, buffer)
   }
-  for (const name of aliases) {
-    const filename = resolve(outdir, name)
-    await writeFile(filename, `export * from "https://koishi.js.org/registry/modules/@koishijs/plugin-console/dist/${name}";\n`)
+
+  if (meta.peerDependencies?.['@koishijs/plugin-console']) {
+    for (const name of redirects) {
+      const filename = resolve(outdir, name)
+      await writeFile(filename, `export * from "https://koishi.js.org/registry/modules/@koishijs/plugin-console/dist/${name}";\n`)
+    }
   }
 }
-
-const aliases = [
-  'vue.js',
-  'vue-router.js',
-  'vueuse.js',
-  'client.js',
-  'element.js',
-]
 
 if (require.main === module) {
   const argv = parse(process.argv.slice(2))

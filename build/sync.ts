@@ -1,5 +1,5 @@
 import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
-import { bundle, locateEntry, prepare } from './bundle'
+import { bundle, locateEntry, prepare, sharedDeps } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { Dict, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
@@ -61,10 +61,6 @@ function softmax(x: number) {
 }
 
 type Subjects = 'maintenance' | 'popularity' | 'quality'
-
-const sharedDeps = [
-  'koishi',
-]
 
 const insecureDeps = [
   'koishi-thirdeye',
