@@ -20,6 +20,7 @@
   "scripts": {
     "build": "tsc -b",
     "bundle": "node -r esbuild-register build/bundle.ts",
+    "play": "node -r esbuild-register build/play.ts",
     "sync": "node -r esbuild-register build/sync.ts"
   },
   "keywords": [

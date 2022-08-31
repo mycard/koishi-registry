@@ -122,6 +122,10 @@ export async function bundle(name: string, outname: string, verified = false) {
       await writeFile(filename, `export * from "https://koishi.js.org/registry/modules/@koishijs/plugin-console/dist/${name}";\n`)
     }
   }
+
+  if (name === '@koishijs/plugin-console') {
+    console.log('::set-output name=playground::true')
+  }
 }
 
 if (require.main === module) {

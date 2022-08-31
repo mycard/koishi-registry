@@ -35,15 +35,23 @@ jobs:
         id: sync
         run: yarn sync
 
-      - name: Deploy
+      - name: Deploy registry
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ steps.sync.outputs.update }}
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.WORKFLOW_TOKEN }}
           publish_dir: dist
           publish_branch: dist
           user_name: GitHub Actions
           user_email: actions@github.com
           force_orphan: true
           enable_jekyll: true
-          commit_message: '[skip ci] deploy'
+
+      - name: Deploy playground
+        if: ${{ steps.sync.outputs.playground }}
+        run: >
+          curl
+          -X POST
+          -H "Accept: application/vnd.github+json"
+          -H "Authorization: token ${{ secrets.WORKFLOW_TOKEN }}"
+          https://api.github.com/repos/koishijs/registry/actions/workflows/playground.yml/dispatches

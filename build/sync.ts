@@ -272,7 +272,7 @@ class Synchronizer {
       if (!this.shouldBundle(name)) {
         this.latest[name].hasBundle = this.legacy[name].hasBundle
       } else {
-        const message = await this.bundle('@koishijs/core', name, true)
+        const message = await this.bundle(name === 'koishi' ? '@koishijs/core' : name, name, true)
         this.latest[name].hasBundle = !message
       }
     }
