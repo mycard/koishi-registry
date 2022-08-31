@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 4
+const version = 5
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -123,7 +123,6 @@ async function catchError<T>(message: string, callback: () => T | Promise<T>) {
   try {
     return await callback()
   } catch (error) {
-    console.log(error)
     return message
   }
 }
@@ -219,7 +218,7 @@ class Synchronizer {
     return legacy !== latest || this.legacy[name]?.hasBundle === undefined
   }
 
-  async bundle(name: string, outname: string, message = '') {
+  async bundle(name: string, outname: string, verified: boolean, message = '') {
     const { version } = this.latest[outname].package
     const meta = this.packages
       .find(item => item.name === outname)?.versions
@@ -227,7 +226,7 @@ class Synchronizer {
     if (!message && meta && !locateEntry(meta)) message = 'no entry'
     message = message
       || await catchError('prepare failed', () => prepare(name, version))
-      || await catchError('bundle failed', () => bundle(name, outname))
+      || await catchError('bundle failed', () => bundle(name, outname, verified))
     if (message) {
       log(kleur.red(`${outname}@${version}: ${message}`))
     } else {
@@ -248,7 +247,7 @@ class Synchronizer {
         if (item.installSize > 5 * 1024 * 1024 && !item.verified) {
           message = 'size exceeded'
         }
-        item.object.hasBundle = item.hasBundle = await this.bundle(item.name, item.name, message)
+        item.object.hasBundle = item.hasBundle = await this.bundle(item.name, item.name, item.verified, message)
 
         // evaluate score
         item.score.final = 0
@@ -277,7 +276,7 @@ class Synchronizer {
       if (!this.shouldBundle(name)) {
         this.latest[name].hasBundle = this.legacy[name].hasBundle
       } else {
-        const message = await this.bundle('@koishijs/core', name)
+        const message = await this.bundle('@koishijs/core', name, true)
         this.latest[name].hasBundle = !message
       }
     }

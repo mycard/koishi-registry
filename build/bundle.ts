@@ -49,7 +49,7 @@ export function locateEntry(meta: PackageJson) {
   return meta.module
 }
 
-export async function bundle(name: string, outname: string) {
+export async function bundle(name: string, outname: string, verified = false) {
   const cwd = resolve(tempDir, name)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
@@ -84,7 +84,7 @@ export async function bundle(name: string, outname: string) {
   const outdir = resolve(__dirname, '../dist/modules', outname)
   const { contents } = result.outputFiles[0]
   let length = contents.byteLength
-  if (length > 1024 * 1024) return 'size exceeded'
+  if (!verified && length > 1024 * 1024) return 'size exceeded'
   const filename = resolve(outdir, 'index.js')
   await rm(outdir, { recursive: true, force: true })
   await mkdir(outdir, { recursive: true })
@@ -94,7 +94,7 @@ export async function bundle(name: string, outname: string) {
   for (const file of files) {
     const buffer = await readFile(resolve(basedir, file))
     length += buffer.byteLength
-    if (length > 1024 * 1024) {
+    if (!verified && length > 1024 * 1024) {
       await rm(outdir, { recursive: true, force: true })
       return 'size exceeded'
     }
@@ -102,7 +102,19 @@ export async function bundle(name: string, outname: string) {
     await mkdir(dirname(filename), { recursive: true })
     await writeFile(filename, buffer)
   }
+  for (const name of aliases) {
+    const filename = resolve(outdir, name)
+    await writeFile(filename, `export * from "https://koishi.js.org/registry/modules/@koishijs/plugin-console/dist/${name}";\n`)
+  }
 }
+
+const aliases = [
+  'vue.js',
+  'vue-router.js',
+  'vueuse.js',
+  'client.js',
+  'element.js',
+]
 
 if (require.main === module) {
   const argv = parse(process.argv.slice(2))
@@ -110,6 +122,6 @@ if (require.main === module) {
   const name = '' + argv._[0]
   Promise.resolve().then(async () => {
     await prepare(name, 'latest')
-    console.log(await bundle(name, name) || 'success')
+    console.log(await bundle(name, name, true) || 'success')
   })
 }
