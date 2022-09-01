@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'fs/promises'
+import { mkdir, readFile, writeFile } from 'fs/promises'
 import { resolve } from 'path'
 
 const outdir = resolve(__dirname, '../play')
@@ -15,6 +15,7 @@ async function start() {
     endpoint,
   })}</script>`
   template = template.replace('</title>', '</title>' + headInjection)
+  await mkdir(outdir, { recursive: true })
   await writeFile(resolve(outdir, 'index.html'), template)
 }
 

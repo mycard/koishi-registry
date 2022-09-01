@@ -32,4 +32,4 @@ jobs:
         run: yarn play
 
       - name: Deploy
-        run: vercel deploy play --token ${{ secrets.VERCEL_TOKEN }} --prod --confirm
+        run: vercel deploy play -A vercel/play.json --token ${{ secrets.VERCEL_TOKEN }} --prod --yes

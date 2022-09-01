@@ -47,6 +47,9 @@ jobs:
           force_orphan: true
           enable_jekyll: true
 
+      - name: Deploy vercel
+        run: vercel deploy dist -A vercel/registry.json --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+
       - name: Deploy playground
         if: ${{ steps.sync.outputs.playground }}
         run: >
