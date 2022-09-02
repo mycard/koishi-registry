@@ -131,7 +131,7 @@ export interface AnalyzedPackage extends SearchPackage, Extension {
   shortname: string
   verified: boolean
   license: string
-  versions: RemotePackage[]
+  versions: Dict<RemotePackage>
   manifest: Manifest
   score: Score
   object?: SearchObject
@@ -249,8 +249,8 @@ export default class Scanner {
       name,
       manifest,
       shortname,
-      versions,
       verified: official,
+      versions: Object.fromEntries(versions.map(item => [item.version, item])),
       ...pick(object, ['score', 'downloads', 'installSize', 'publishSize', 'hasBundle']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),

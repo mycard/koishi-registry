@@ -1,14 +1,14 @@
 import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
 import { bundle, locateEntry, prepare, sharedDeps } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
-import { Dict, Time, valueMap } from 'cosmokit'
+import { Dict, pick, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
 import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 5
+const version = 4
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -84,7 +84,7 @@ const weights: Record<Subjects, number> = {
 const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
   async maintenance(item, object) {
     if (item.verified) return 1
-    const meta = item.versions.find(v => v.version === item.version)
+    const meta = item.versions[item.version]
     if (insecureDeps.some(name => meta.dependencies?.[name])) return 0
     return object.hasBundle ? 0.75 : 0.5
   },
@@ -216,9 +216,7 @@ class Synchronizer {
 
   async bundle(name: string, outname: string, verified: boolean, message = '') {
     const { version } = this.latest[outname].package
-    const meta = this.packages
-      .find(item => item.name === outname)?.versions
-      .find(item => item.version === version)
+    const meta = this.packages.find(item => item.name === outname)?.versions[version]
     if (!message && meta && !locateEntry(meta)) message = 'no entry'
     message = message
       || await catchError('prepare failed', () => prepare(name, version))
@@ -260,7 +258,7 @@ class Synchronizer {
       }
 
       // we don't need version details
-      item.versions = undefined
+      item.versions = pick(item.versions, [item.version])
 
       // pre-render markdown description
       item.manifest.description = valueMap(item.manifest.description, text => marked
@@ -283,7 +281,7 @@ class Synchronizer {
     await writeFile(resolve(outdir, 'index.json'), JSON.stringify(this.scanner))
 
     this.packages.sort((a, b) => b.score.final - a.score.final)
-    const content = JSON.stringify({ timestamp: Date.now(), packages: this.packages })
+    const content = JSON.stringify({ timestamp: Date.now(), objects: this.packages })
     await writeFile(resolve(outdir, 'market.json'), content)
 
     // remove unused packages
