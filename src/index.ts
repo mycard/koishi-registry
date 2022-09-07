@@ -1,4 +1,4 @@
-import { intersects, maxSatisfying } from 'semver'
+import { intersects } from 'semver'
 import { Awaitable, defineProperty, Dict, pick, Time } from 'cosmokit'
 import pMap from 'p-map'
 
@@ -203,7 +203,7 @@ export default interface Scanner extends SearchResult {
 }
 
 export default class Scanner {
-  constructor(private request: <T>(url: string, config?: RequestConfig) => Promise<T>) {
+  constructor(public request: <T>(url: string, config?: RequestConfig) => Promise<T>) {
     defineProperty(this, 'progress', 0)
   }
 
@@ -222,15 +222,9 @@ export default class Scanner {
     for (let offset = this.objects.length; offset < this.total; offset += step) {
       await this.search(offset, config)
     }
-    const tasks: Promise<void>[] = []
     this.objects = this.objects.filter((object) => {
       const { name } = object.package
       if (config.extra?.includes(name)) {
-        tasks.push((async () => {
-          const registry = await this.request<Registry>(`/${name}`)
-          const version = maxSatisfying(Object.keys(registry.versions), '*')
-          Object.assign(object.package, registry.versions[version])
-        })())
         return object.ignored = true
       } else {
         const official = /^@koishijs\/plugin-.+/.test(name)
@@ -238,7 +232,6 @@ export default class Scanner {
         return official || community
       }
     })
-    await Promise.all(tasks)
     this.total = this.objects.length
   }
 

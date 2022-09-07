@@ -10,9 +10,9 @@ async function start() {
   let template = await readFile(filename, 'utf8')
   template = template.replace(/(href|src)="(?=\/)/g, (_, $1) => `${$1}="${endpoint + relpath}`)
   const headInjection = `<script>KOISHI_CONFIG = ${JSON.stringify({
-    client: true,
     uiPath: '/',
     endpoint,
+    static: true,
   })}</script>`
   template = template.replace('</title>', '</title>' + headInjection)
   await mkdir(outdir, { recursive: true })

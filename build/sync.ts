@@ -1,4 +1,4 @@
-import Scanner, { AnalyzedPackage, SearchObject, SearchResult } from '../src'
+import Scanner, { AnalyzedPackage, Registry, SearchObject, SearchResult } from '../src'
 import { bundle, locateEntry, prepare, sharedDeps } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { Dict, pick, Time, valueMap } from 'cosmokit'
@@ -7,8 +7,9 @@ import { resolve } from 'path'
 import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
+import { maxSatisfying } from 'semver'
 
-const version = 2
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -166,15 +167,15 @@ class Synchronizer {
 
     let hasDiff = false
     for (const name in { ...this.latest, ...this.legacy }) {
-      const version1 = this.legacy[name]?.package.version
-      const version2 = this.latest[name]?.package.version
-      if (version1 === version2) continue
-      if (!version1) {
-        log(kleur.green(`+ ${name}: ${version2}`))
-      } else if (!version2) {
-        log(kleur.red(`- ${name}: ${version1}`))
+      const date1 = this.legacy[name]?.package.date
+      const date2 = this.latest[name]?.package.date
+      if (date1 === date2) continue
+      if (!date1) {
+        log(kleur.green(`- ${name}: added`))
+      } else if (!date2) {
+        log(kleur.red(`- ${name}: removed`))
       } else {
-        log(kleur.yellow(`* ${name}: ${version1} -> ${version2}`))
+        log(kleur.yellow(`- ${name}: updated`))
       }
       hasDiff = true
     }
@@ -209,13 +210,12 @@ class Synchronizer {
 
   shouldBundle(name: string) {
     if (this.forceUpdate) return true
-    const legacy = this.legacy[name]?.package.version
-    const latest = this.latest[name]?.package.version
+    const legacy = this.legacy[name]?.package.date
+    const latest = this.latest[name]?.package.date
     return legacy !== latest || this.legacy[name]?.portable === undefined
   }
 
-  async bundle(name: string, outname: string, verified: boolean, message = '') {
-    const { version } = this.latest[outname].package
+  async bundle(name: string, outname: string, version: string, verified: boolean, message = '') {
     const meta = this.packages.find(item => item.name === outname)?.versions[version]
     if (!message && meta && !locateEntry(meta)) message = 'no entry'
     message = message
@@ -241,7 +241,7 @@ class Synchronizer {
         if (item.installSize > 5 * 1024 * 1024 && !item.verified) {
           message = 'size exceeded'
         }
-        item.object.portable = item.portable = await this.bundle(item.name, item.name, item.verified, message)
+        item.object.portable = item.portable = await this.bundle(item.name, item.name, item.version, item.verified, message)
 
         // evaluate score
         item.score.final = 0
@@ -270,7 +270,9 @@ class Synchronizer {
       if (!this.shouldBundle(name)) {
         this.latest[name].portable = this.legacy[name].portable
       } else {
-        const message = await this.bundle(name === 'koishi' ? '@koishijs/core' : name, name, true)
+        const registry = await this.scanner.request<Registry>(`/${name}`)
+        const version = maxSatisfying(Object.keys(registry.versions), '*')
+        const message = await this.bundle(name === 'koishi' ? '@koishijs/core' : name, name, version, true)
         this.latest[name].portable = !message
       }
     }

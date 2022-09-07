@@ -10,9 +10,6 @@ jobs:
   sync:
     runs-on: ubuntu-latest
 
-    outputs:
-      update: ${{ steps.sync.outputs.update }}
-
     steps:
       - name: Check out
         uses: actions/checkout@v3
@@ -48,6 +45,7 @@ jobs:
           enable_jekyll: true
 
       - name: Deploy vercel
+        if: ${{ steps.sync.outputs.update }}
         run: vercel deploy dist -A vercel/registry.json --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
 
       - name: Deploy playground
