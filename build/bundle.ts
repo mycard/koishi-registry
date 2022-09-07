@@ -30,7 +30,7 @@ export async function prepare(name: string, version: string) {
     },
   }))
 
-  const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps', '--registry', 'https://'], { cwd })
+  const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps'], { cwd })
   if (code) throw new Error('npm install failed')
 }
 
@@ -132,9 +132,10 @@ export async function bundle(name: string, outname: string, verified = false) {
 if (require.main === module) {
   const argv = parse(process.argv.slice(2))
   if (!argv._.length) throw new Error('package name required')
-  const name = '' + argv._[0]
+  const outname = '' + argv._[0]
+  const name = outname === 'koishi' ? '@koishijs/core' : outname
   Promise.resolve().then(async () => {
     await prepare(name, 'latest')
-    console.log(await bundle(name, name, true) || 'success')
+    console.log(await bundle(name, outname, true) || 'success')
   })
 }

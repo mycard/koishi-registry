@@ -1,4 +1,4 @@
-import { intersects } from 'semver'
+import { intersects, maxSatisfying } from 'semver'
 import { Awaitable, defineProperty, Dict, pick, Time } from 'cosmokit'
 import pMap from 'p-map'
 
@@ -222,12 +222,23 @@ export default class Scanner {
     for (let offset = this.objects.length; offset < this.total; offset += step) {
       await this.search(offset, config)
     }
+    const tasks: Promise<void>[] = []
     this.objects = this.objects.filter((object) => {
       const { name } = object.package
-      const official = /^@koishijs\/plugin-.+/.test(name)
-      const community = /(^|\/)koishi-plugin-.+/.test(name)
-      return official || community || config.extra?.includes(name)
+      if (config.extra?.includes(name)) {
+        tasks.push((async () => {
+          const registry = await this.request<Registry>(`/${name}`)
+          const version = maxSatisfying(Object.keys(registry.versions), '*')
+          Object.assign(object.package, registry.versions[version])
+        })())
+        return object.ignored = true
+      } else {
+        const official = /^@koishijs\/plugin-.+/.test(name)
+        const community = /(^|\/)koishi-plugin-.+/.test(name)
+        return official || community
+      }
     })
+    await Promise.all(tasks)
     this.total = this.objects.length
   }
 
@@ -268,6 +279,7 @@ export default class Scanner {
     const { concurrency = 5, version, before, onSuccess, onFailure, onSkipped, after } = config
 
     const result = await pMap(this.objects, async (object) => {
+      if (object.ignored) return
       before?.(object)
       const { name } = object.package
       try {
