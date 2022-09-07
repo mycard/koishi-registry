@@ -2,9 +2,9 @@ import { mkdir, readFile, writeFile } from 'fs/promises'
 import { resolve } from 'path'
 
 const outdir = resolve(__dirname, '../play')
-const endpoint = 'https://koishi.js.org/registry/modules'
-const relpath = '/@koishijs/plugin-console/dist'
-const filename = resolve(__dirname, `../dist/modules${relpath}/index.html`)
+const endpoint = 'https://registry.koishi.chat'
+const relpath = '/modules/@koishijs/plugin-console/dist'
+const filename = resolve(__dirname, `../dist${relpath}/index.html`)
 
 async function start() {
   let template = await readFile(filename, 'utf8')

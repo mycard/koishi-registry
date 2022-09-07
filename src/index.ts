@@ -92,7 +92,7 @@ export interface SearchPackage extends BasePackage {
 }
 
 export interface Extension {
-  hasBundle?: boolean
+  portable?: boolean
   publishSize?: number
   installSize?: number
   downloads?: {
@@ -127,11 +127,16 @@ export interface SearchResult {
   version?: number
 }
 
+export interface MarketResult {
+  timestamp: number
+  objects: AnalyzedPackage[]
+}
+
 export interface AnalyzedPackage extends SearchPackage, Extension {
   shortname: string
   verified: boolean
   license: string
-  versions: Dict<RemotePackage>
+  versions: Dict<Partial<RemotePackage>>
   manifest: Manifest
   score: Score
   object?: SearchObject
@@ -251,7 +256,7 @@ export default class Scanner {
       shortname,
       verified: official,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
-      ...pick(object, ['score', 'downloads', 'installSize', 'publishSize', 'hasBundle']),
+      ...pick(object, ['score', 'downloads', 'installSize', 'publishSize', 'portable']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
     }

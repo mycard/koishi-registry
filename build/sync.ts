@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 4
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -86,7 +86,7 @@ const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject)
     if (item.verified) return 1
     const meta = item.versions[item.version]
     if (insecureDeps.some(name => meta.dependencies?.[name])) return 0
-    return object.hasBundle ? 0.75 : 0.5
+    return object.portable ? 0.75 : 0.5
   },
   async popularity(item, object) {
     const downloads = await getDownloads(item.name)
@@ -211,7 +211,7 @@ class Synchronizer {
     if (this.forceUpdate) return true
     const legacy = this.legacy[name]?.package.version
     const latest = this.latest[name]?.package.version
-    return legacy !== latest || this.legacy[name]?.hasBundle === undefined
+    return legacy !== latest || this.legacy[name]?.portable === undefined
   }
 
   async bundle(name: string, outname: string, verified: boolean, message = '') {
@@ -233,7 +233,7 @@ class Synchronizer {
     await pMap(this.packages, async (item) => {
       const legacy = this.legacy[item.name]
       if (!this.shouldBundle(item.name)) {
-        item.object.hasBundle = item.hasBundle = legacy.hasBundle
+        item.object.portable = item.portable = legacy.portable
         item.score = legacy.score
       } else {
         // bundle package
@@ -241,7 +241,7 @@ class Synchronizer {
         if (item.installSize > 5 * 1024 * 1024 && !item.verified) {
           message = 'size exceeded'
         }
-        item.object.hasBundle = item.hasBundle = await this.bundle(item.name, item.name, item.verified, message)
+        item.object.portable = item.portable = await this.bundle(item.name, item.name, item.verified, message)
 
         // evaluate score
         item.score.final = 0
@@ -268,10 +268,10 @@ class Synchronizer {
 
     for (const name of sharedDeps) {
       if (!this.shouldBundle(name)) {
-        this.latest[name].hasBundle = this.legacy[name].hasBundle
+        this.latest[name].portable = this.legacy[name].portable
       } else {
         const message = await this.bundle(name === 'koishi' ? '@koishijs/core' : name, name, true)
-        this.latest[name].hasBundle = !message
+        this.latest[name].portable = !message
       }
     }
   }
@@ -295,7 +295,7 @@ class Synchronizer {
     }
     for (const folder of folders) {
       if (sharedDeps.includes(folder)) continue
-      if (this.packages.find(item => item.name === folder && item.hasBundle)) continue
+      if (this.packages.find(item => item.name === folder && item.portable)) continue
       await rm(outdir + '/modules/' + folder, { recursive: true, force: true })
     }
   }

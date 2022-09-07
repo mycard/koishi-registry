@@ -34,7 +34,7 @@ export async function prepare(name: string, version: string) {
   if (code) throw new Error('npm install failed')
 }
 
-export function locateEntry(meta: PackageJson) {
+export function locateEntry(meta: Partial<PackageJson>) {
   if (typeof meta.exports === 'string') {
     return meta.exports
   } else if (meta.exports) {
@@ -52,6 +52,7 @@ export function locateEntry(meta: PackageJson) {
 export const sharedDeps = [
   'koishi',
   '@koishijs/helpers',
+  '@koishijs/loader',
 ]
 
 const redirects = [
@@ -81,14 +82,14 @@ export async function bundle(name: string, outname: string, verified = false) {
     logLevel: 'silent',
     define: {
       'process.env.KOISHI_ENV': JSON.stringify('browser'),
-      'process.env.KOISHI_BASE': JSON.stringify('https://koishi.js.org/registry/modules/' + name),
+      'process.env.KOISHI_BASE': JSON.stringify('https://registry.koishi.chat/modules/' + name),
     },
     plugins: [{
       name: 'dep check',
       setup(build) {
         build.onResolve({ filter: /^[@/\w-]+$/ }, (args) => {
           if (!sharedDeps.includes(args.path) && !meta.peerDependencies?.[args.path]) return null
-          return { external: true, path: 'https://koishi.js.org/registry/modules/' + args.path + '/index.js' }
+          return { external: true, path: 'https://registry.koishi.chat/modules/' + args.path + '/index.js' }
         })
       },
     }],
@@ -119,7 +120,7 @@ export async function bundle(name: string, outname: string, verified = false) {
   if (meta.peerDependencies?.['@koishijs/plugin-console']) {
     for (const name of redirects) {
       const filename = resolve(outdir, name)
-      await writeFile(filename, `export * from "https://koishi.js.org/registry/modules/@koishijs/plugin-console/dist/${name}";\n`)
+      await writeFile(filename, `export * from "https://registry.koishi.chat/modules/@koishijs/plugin-console/dist/${name}";\n`)
     }
   }
 
