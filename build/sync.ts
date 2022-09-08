@@ -9,7 +9,7 @@ import axios from 'axios'
 import pMap from 'p-map'
 import { maxSatisfying } from 'semver'
 
-const version = 3
+const version = 2
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -233,8 +233,9 @@ class Synchronizer {
     await pMap(this.packages, async (item) => {
       const legacy = this.legacy[item.name]
       if (!this.shouldBundle(item.name)) {
-        item.object.portable = item.portable = legacy.portable
-        item.score = legacy.score
+        for (const key of ['portable', 'downloads', 'installSize', 'publishSize', 'score']) {
+          item.object[key] = item[key] = legacy[key]
+        }
       } else {
         // bundle package
         let message = ''
