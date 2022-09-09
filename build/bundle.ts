@@ -67,8 +67,7 @@ export async function bundle(name: string, outname: string, verified = false) {
   const cwd = resolve(tempDir, name)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
-  const entry = locateEntry(meta)
-  if (!entry) return 'no entry'
+  const entry = locateEntry(meta) || meta.main
   const basedir = dirname(require.resolve(name + '/package.json'))
   const result = await build({
     entryPoints: [resolve(basedir, entry)],

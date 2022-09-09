@@ -42,6 +42,7 @@ export interface IconSvg {
 export interface Manifest {
   icon?: IconSvg
   hidden?: boolean
+  browser?: boolean
   category?: string
   public?: string[]
   description?: Dict<string>
@@ -253,7 +254,7 @@ export default class Scanner {
     const manifest = conclude(latest)
     if (manifest.hidden) return
 
-    const shortname = official ? name.slice(17) : name.slice(14)
+    const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
     const analyzed: AnalyzedPackage = {
       name,
       manifest,

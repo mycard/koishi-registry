@@ -9,7 +9,7 @@ import axios from 'axios'
 import pMap from 'p-map'
 import { maxSatisfying } from 'semver'
 
-const version = 2
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -217,7 +217,13 @@ class Synchronizer {
 
   async bundle(name: string, outname: string, version: string, verified: boolean, message = '') {
     const meta = this.packages.find(item => item.name === outname)?.versions[version]
-    if (!message && meta && !locateEntry(meta)) message = 'no entry'
+    if (!message && meta) {
+      if (meta.koishi?.browser === false) {
+        message = 'explicitly disabled'
+      } else if (meta.koishi?.browser !== true && !locateEntry(meta)) {
+        message = 'no browser entry'
+      }
+    }
     message = message
       || await catchError('prepare failed', () => prepare(name, version))
       || await catchError('bundle failed', () => bundle(name, outname, verified))
