@@ -69,6 +69,7 @@ export async function bundle(name: string, outname: string, verified = false) {
   const meta: PackageJson = require(name + '/package.json')
   const entry = locateEntry(meta) || meta.main
   const basedir = dirname(require.resolve(name + '/package.json'))
+  const external = new Set([...sharedDeps, ...Object.keys(meta.peerDependencies || {})])
   const result = await build({
     entryPoints: [resolve(basedir, entry)],
     bundle: true,
@@ -84,12 +85,21 @@ export async function bundle(name: string, outname: string, verified = false) {
       'process.env.KOISHI_BASE': JSON.stringify('https://registry.koishi.chat/modules/' + name),
     },
     plugins: [{
-      name: 'dep check',
+      name: 'external',
       setup(build) {
-        build.onResolve({ filter: /^[@/\w-]+$/ }, (args) => {
-          if (!sharedDeps.includes(args.path) && !meta.peerDependencies?.[args.path]) return null
-          return { external: true, path: 'https://registry.koishi.chat/modules/' + args.path + '/index.js' }
-        })
+        const escape = (text: string) => `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+        const filter = new RegExp([...external].map(escape).join('|'))
+        build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+          external: true,
+          path: 'https://registry.koishi.chat/modules/' + args.path + '/index.js',
+        }))
+        build.onResolve({ filter }, (args) => ({
+          path: args.path,
+          namespace: 'external',
+        }))
+        build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+          contents: `export * from ${JSON.stringify(args.path)}`,
+        }))
       },
     }],
   })
@@ -135,6 +145,7 @@ if (require.main === module) {
   const name = outname === 'koishi' ? '@koishijs/core' : outname
   Promise.resolve().then(async () => {
     await prepare(name, 'latest')
-    console.log(await bundle(name, outname, true) || 'success')
+    const filename = resolve(__dirname, '../dist/modules', outname, 'index.js')
+    console.log(await bundle(name, outname, true) || filename)
   })
 }
