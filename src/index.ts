@@ -1,4 +1,4 @@
-import { intersects } from 'semver'
+import { intersects, maxSatisfying } from 'semver'
 import { Awaitable, defineProperty, Dict, pick, Time } from 'cosmokit'
 import pMap from 'p-map'
 
@@ -83,8 +83,13 @@ export interface Registry extends BasePackage {
   readmeFilename: string
 }
 
-export interface SearchPackage extends BasePackage {
+export interface DatedPackage extends BasePackage {
   date: string
+  portable?: boolean
+  object?: SearchObject
+}
+
+export interface SearchPackage extends DatedPackage {
   links: Dict<string>
   author: User
   publisher: User
@@ -93,7 +98,7 @@ export interface SearchPackage extends BasePackage {
 }
 
 export interface Extension {
-  portable?: boolean
+  score: Score
   publishSize?: number
   installSize?: number
   downloads?: {
@@ -103,7 +108,6 @@ export interface Extension {
 
 export interface SearchObject extends Extension {
   package: SearchPackage
-  score: Score
   searchScore: number
   ignored?: boolean
 }
@@ -125,12 +129,18 @@ export interface SearchResult {
   total: number
   time: string
   objects: SearchObject[]
+  shared?: SharedPackage[]
   version?: number
 }
 
 export interface MarketResult {
   timestamp: number
   objects: AnalyzedPackage[]
+  shared: SharedPackage[]
+}
+
+export interface SharedPackage extends DatedPackage {
+  versions: Dict<Partial<RemotePackage>>
 }
 
 export interface AnalyzedPackage extends SearchPackage, Extension {
@@ -139,14 +149,13 @@ export interface AnalyzedPackage extends SearchPackage, Extension {
   license: string
   versions: Dict<Partial<RemotePackage>>
   manifest: Manifest
-  score: Score
-  object?: SearchObject
 }
 
 export interface CollectConfig {
   step?: number
   timeout?: number
-  extra?: string[]
+  shared?: string[]
+  concurrency?: number
 }
 
 export interface AnalyzeConfig {
@@ -210,13 +219,13 @@ export default class Scanner {
 
   private async search(offset: number, config: CollectConfig) {
     const { step = 250, timeout = Time.second * 30 } = config
-    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi&size=${step}&from=${offset}`, { timeout })
+    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&from=${offset}`, { timeout })
     this.objects.push(...result.objects)
     return result.total
   }
 
   public async collect(config: CollectConfig = {}) {
-    const { step = 250 } = config
+    const { step = 250, shared = [], concurrency = 5 } = config
     this.objects = []
     this.time = new Date().toUTCString()
     let total = await this.search(0, config)
@@ -225,14 +234,20 @@ export default class Scanner {
     }
     this.objects = this.objects.filter((object) => {
       const { name } = object.package
-      if (config.extra?.includes(name)) {
-        return object.ignored = true
-      } else {
-        const official = /^@koishijs\/plugin-.+/.test(name)
-        const community = /(^|\/)koishi-plugin-.+/.test(name)
-        return official || community
-      }
+      const official = /^@koishijs\/plugin-.+/.test(name)
+      const community = /(^|\/)koishi-plugin-.+/.test(name)
+      return official || community
     })
+    this.shared = await pMap<string, SharedPackage>(shared, async (name) => {
+      const registry = await this.request<Registry>(`/${name}`)
+      const version = maxSatisfying(Object.keys(registry.versions), '*')
+      return {
+        ...pick(registry, ['name', 'description']),
+        version,
+        date: registry.time.modified,
+        versions: pick(registry.versions, [version]),
+      }
+    }, { concurrency })
     this.total = this.objects.length
   }
 
@@ -261,8 +276,8 @@ export default class Scanner {
       shortname,
       verified: official,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
-      ...pick(object, ['score', 'downloads', 'installSize', 'publishSize', 'portable']),
-      ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
+      ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
+      ...pick(object.package, ['date', 'links', 'publisher', 'maintainers', 'portable']),
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
     }
     defineProperty(analyzed, 'object', object)

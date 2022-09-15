@@ -1,31 +1,34 @@
-import Scanner, { AnalyzedPackage, Registry, SearchObject, SearchResult } from '../src'
+import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '../src'
 import { bundle, locateEntry, prepare, sharedDeps } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
-import { Dict, pick, Time, valueMap } from 'cosmokit'
+import { defineProperty, Dict, pick, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
 import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
-import { maxSatisfying } from 'semver'
 
-const version = 3
+const version = 4
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
   try {
     return require(dirname) as SearchResult
   } catch {
-    return { total: 0, objects: [], time: '1970-01-01T00:00:00Z' }
+    return { total: 0, objects: [], shared: [], time: '1970-01-01T00:00:00Z' }
   }
 }
 
 const BASE_URL = 'https://registry.npmjs.com'
 
-function makeDict(objects: SearchObject[]) {
-  const dict: Dict<SearchObject> = Object.create(null)
-  for (const object of objects) {
-    dict[object.package.name] = object
+function makeDict(result: SearchResult) {
+  const dict: Dict<DatedPackage> = Object.create(null)
+  for (const object of result.objects) {
+    dict[object.package.name] = object.package
+    defineProperty(object.package, 'object', object)
+  }
+  for (const object of result.shared || []) {
+    dict[object.name] = object
   }
   return dict
 }
@@ -87,7 +90,7 @@ const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject)
     if (item.verified) return 1
     const meta = item.versions[item.version]
     if (insecureDeps.some(name => meta.dependencies?.[name])) return 0
-    return object.portable ? 0.75 : 0.5
+    return item.portable ? 0.75 : 0.5
   },
   async popularity(item, object) {
     const downloads = await getDownloads(item.name)
@@ -128,8 +131,8 @@ const outdir = resolve(__dirname, '../dist')
 
 class Synchronizer {
   private forceUpdate: boolean
-  private latest: Dict<SearchObject>
-  private legacy: Dict<SearchObject>
+  private latest: Dict<DatedPackage>
+  private legacy: Dict<DatedPackage>
   private packages: AnalyzedPackage[]
   private scanner = new Scanner(async (url) => {
     const { data } = await axios.get(BASE_URL + url)
@@ -149,11 +152,11 @@ class Synchronizer {
   async check() {
     const [legacy] = await Promise.all([
       getLegacy(outdir),
-      this.scanner.collect({ extra: sharedDeps }),
+      this.scanner.collect({ shared: sharedDeps }),
     ])
 
-    this.latest = makeDict(this.scanner.objects)
-    this.legacy = makeDict(legacy.objects)
+    this.latest = makeDict(this.scanner)
+    this.legacy = makeDict(legacy)
     this.forceUpdate = version !== legacy.version
     if (this.forceUpdate) {
       log('force update due to version mismatch')
@@ -167,8 +170,8 @@ class Synchronizer {
 
     let hasDiff = false
     for (const name in { ...this.latest, ...this.legacy }) {
-      const date1 = this.legacy[name]?.package.date
-      const date2 = this.latest[name]?.package.date
+      const date1 = this.legacy[name]?.date
+      const date2 = this.latest[name]?.date
       if (date1 === date2) continue
       if (!date1) {
         log(kleur.green(`- ${name}: added`))
@@ -208,11 +211,11 @@ class Synchronizer {
     }
   }
 
-  shouldBundle(name: string) {
+  hasUpdate(name: string) {
     if (this.forceUpdate) return true
-    const legacy = this.legacy[name]?.package.date
-    const latest = this.latest[name]?.package.date
-    return legacy !== latest || this.legacy[name]?.portable === undefined
+    const legacy = this.legacy[name]?.date
+    const latest = this.latest[name]?.date
+    return legacy !== latest || this.legacy[name].portable === undefined
   }
 
   async bundle(name: string, outname: string, version: string, verified: boolean, message = '') {
@@ -225,7 +228,7 @@ class Synchronizer {
       }
     }
     message = message
-      || await catchError('prepare failed', () => prepare(name, version))
+      || await catchError('prepare failed', () => prepare(name, outname, version))
       || await catchError('bundle failed', () => bundle(name, outname, verified))
     if (message) {
       log(kleur.red(`${outname}@${version}: ${message}`))
@@ -236,11 +239,22 @@ class Synchronizer {
   }
 
   async bundleAll() {
+    for (const name of sharedDeps) {
+      const current = this.latest[name]
+      if (!this.hasUpdate(name)) {
+        current.portable = this.legacy[name].portable
+      } else {
+        const message = await this.bundle(name === 'koishi' ? '@koishijs/core' : name, name, current.version, true)
+        current.portable = !message
+      }
+    }
+
     await pMap(this.packages, async (item) => {
       const legacy = this.legacy[item.name]
-      if (!this.shouldBundle(item.name)) {
-        for (const key of ['portable', 'downloads', 'installSize', 'publishSize', 'score']) {
-          item.object[key] = item[key] = legacy[key]
+      if (!this.hasUpdate(item.name)) {
+        item.object.package.portable = item.portable = legacy.portable
+        for (const key of ['downloads', 'installSize', 'publishSize', 'score']) {
+          item.object[key] = item[key] = legacy.object[key]
         }
       } else {
         // bundle package
@@ -248,7 +262,7 @@ class Synchronizer {
         if (item.installSize > 5 * 1024 * 1024 && !item.verified) {
           message = 'size exceeded'
         }
-        item.object.portable = item.portable = await this.bundle(item.name, item.name, item.version, item.verified, message)
+        item.object.package.portable = item.portable = await this.bundle(item.name, item.name, item.version, item.verified, message)
 
         // evaluate score
         item.score.final = 0
@@ -272,17 +286,6 @@ class Synchronizer {
         .parseInline(text)
         .replace('<a ', '<a target="_blank" rel="noopener noreferrer" '))
     }, { concurrency: 5 })
-
-    for (const name of sharedDeps) {
-      if (!this.shouldBundle(name)) {
-        this.latest[name].portable = this.legacy[name].portable
-      } else {
-        const registry = await this.scanner.request<Registry>(`/${name}`)
-        const version = maxSatisfying(Object.keys(registry.versions), '*')
-        const message = await this.bundle(name === 'koishi' ? '@koishijs/core' : name, name, version, true)
-        this.latest[name].portable = !message
-      }
-    }
   }
 
   async generate() {
@@ -290,7 +293,7 @@ class Synchronizer {
     await writeFile(resolve(outdir, 'index.json'), JSON.stringify(this.scanner))
 
     this.packages.sort((a, b) => b.score.final - a.score.final)
-    const content = JSON.stringify({ timestamp: Date.now(), objects: this.packages })
+    const content = JSON.stringify({ timestamp: Date.now(), objects: this.packages, shared: this.scanner.shared })
     await writeFile(resolve(outdir, 'market.json'), content)
 
     // remove unused packages

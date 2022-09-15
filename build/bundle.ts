@@ -16,8 +16,8 @@ function spawnAsync(args: string[], options?: ExecOptions) {
 
 const tempDir = resolve(__dirname, '../temp')
 
-export async function prepare(name: string, version: string) {
-  const cwd = resolve(tempDir, name)
+export async function prepare(name: string, outname: string, version: string) {
+  const cwd = resolve(tempDir, outname)
   await rm(cwd, { recursive: true, force: true })
   await mkdir(cwd, { recursive: true })
   await writeFile(cwd + '/index.js', '')
@@ -27,6 +27,9 @@ export async function prepare(name: string, version: string) {
     },
     browser: {
       path: false,
+    },
+    resolutions: {
+      'cordis-axios': '1.0.5',
     },
   }))
 
@@ -64,7 +67,7 @@ const redirects = [
 ]
 
 export async function bundle(name: string, outname: string, verified = false) {
-  const cwd = resolve(tempDir, name)
+  const cwd = resolve(tempDir, outname)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
   const entry = locateEntry(meta) || meta.main
@@ -82,6 +85,7 @@ export async function bundle(name: string, outname: string, verified = false) {
     logLevel: 'silent',
     define: {
       'process.env.KOISHI_ENV': JSON.stringify('browser'),
+      'process.env.KOISHI_REGISTRY': JSON.stringify('https://registry.koishi.chat'),
       'process.env.KOISHI_BASE': JSON.stringify('https://registry.koishi.chat/modules/' + name),
     },
     plugins: [{
@@ -144,7 +148,7 @@ if (require.main === module) {
   const outname = '' + argv._[0]
   const name = outname === 'koishi' ? '@koishijs/core' : outname
   Promise.resolve().then(async () => {
-    await prepare(name, 'latest')
+    await prepare(name, outname, 'latest')
     const filename = resolve(__dirname, '../dist/modules', outname, 'index.js')
     console.log(await bundle(name, outname, true) || filename)
   })
