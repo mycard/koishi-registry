@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 4
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -218,8 +218,8 @@ class Synchronizer {
     return legacy !== latest || this.legacy[name].portable === undefined
   }
 
-  async bundle(name: string, outname: string, version: string, verified: boolean, message = '') {
-    const meta = this.packages.find(item => item.name === outname)?.versions[version]
+  async bundle(name: string, version: string, verified: boolean, message = '') {
+    const meta = this.packages.find(item => item.name === name)?.versions[version]
     if (!message && meta) {
       if (meta.koishi?.browser === false) {
         message = 'explicitly disabled'
@@ -228,12 +228,12 @@ class Synchronizer {
       }
     }
     message = message
-      || await catchError('prepare failed', () => prepare(name, outname, version))
-      || await catchError('bundle failed', () => bundle(name, outname, verified))
+      || await catchError('prepare failed', () => prepare(name, version))
+      || await catchError('bundle failed', () => bundle(name, verified))
     if (message) {
-      log(kleur.red(`${outname}@${version}: ${message}`))
+      log(kleur.red(`${name}@${version}: ${message}`))
     } else {
-      log(kleur.green(`${outname}@${version}: success`))
+      log(kleur.green(`${name}@${version}: success`))
     }
     return !message
   }
@@ -244,7 +244,7 @@ class Synchronizer {
       if (!this.hasUpdate(name)) {
         current.portable = this.legacy[name].portable
       } else {
-        const message = await this.bundle(name === 'koishi' ? '@koishijs/core' : name, name, current.version, true)
+        const message = await this.bundle(name, current.version, true)
         current.portable = !message
       }
     }
@@ -262,7 +262,7 @@ class Synchronizer {
         if (item.installSize > 5 * 1024 * 1024 && !item.verified) {
           message = 'size exceeded'
         }
-        item.object.package.portable = item.portable = await this.bundle(item.name, item.name, item.version, item.verified, message)
+        item.object.package.portable = item.portable = await this.bundle(item.name, item.version, item.verified, message)
 
         // evaluate score
         item.score.final = 0

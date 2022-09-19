@@ -236,7 +236,7 @@ export default class Scanner {
       const { name } = object.package
       const official = /^@koishijs\/plugin-.+/.test(name)
       const community = /(^|\/)koishi-plugin-.+/.test(name)
-      return official || community
+      return !object.ignored && (official || community)
     })
     this.shared = await pMap<string, SharedPackage>(shared, async (name) => {
       const registry = await this.request<Registry>(`/${name}`)

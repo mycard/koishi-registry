@@ -14,10 +14,11 @@ function spawnAsync(args: string[], options?: ExecOptions) {
   })
 }
 
+const endpoint = 'https://registry.koishi.chat'
 const tempDir = resolve(__dirname, '../temp')
 
-export async function prepare(name: string, outname: string, version: string) {
-  const cwd = resolve(tempDir, outname)
+export async function prepare(name: string, version: string) {
+  const cwd = resolve(tempDir, name)
   await rm(cwd, { recursive: true, force: true })
   await mkdir(cwd, { recursive: true })
   await writeFile(cwd + '/index.js', '')
@@ -27,9 +28,6 @@ export async function prepare(name: string, outname: string, version: string) {
     },
     browser: {
       path: false,
-    },
-    resolutions: {
-      'cordis-axios': '1.0.5',
     },
   }))
 
@@ -66,8 +64,8 @@ const redirects = [
   'element.js',
 ]
 
-export async function bundle(name: string, outname: string, verified = false) {
-  const cwd = resolve(tempDir, outname)
+export async function bundle(name: string, verified = false) {
+  const cwd = resolve(tempDir, name)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
   const entry = locateEntry(meta) || meta.main
@@ -85,8 +83,8 @@ export async function bundle(name: string, outname: string, verified = false) {
     logLevel: 'silent',
     define: {
       'process.env.KOISHI_ENV': JSON.stringify('browser'),
-      'process.env.KOISHI_REGISTRY': JSON.stringify('https://registry.koishi.chat'),
-      'process.env.KOISHI_BASE': JSON.stringify('https://registry.koishi.chat/modules/' + name),
+      'process.env.KOISHI_REGISTRY': JSON.stringify(endpoint),
+      'process.env.KOISHI_BASE': JSON.stringify(endpoint + '/modules/' + name),
     },
     plugins: [{
       name: 'external',
@@ -95,7 +93,7 @@ export async function bundle(name: string, outname: string, verified = false) {
         const filter = new RegExp([...external].map(escape).join('|'))
         build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
           external: true,
-          path: 'https://registry.koishi.chat/modules/' + args.path + '/index.js',
+          path: endpoint + '/modules/' + args.path + '/index.js',
         }))
         build.onResolve({ filter }, (args) => ({
           path: args.path,
@@ -108,7 +106,7 @@ export async function bundle(name: string, outname: string, verified = false) {
     }],
   })
 
-  const outdir = resolve(__dirname, '../dist/modules', outname)
+  const outdir = resolve(__dirname, '../dist/modules', name)
   const { contents } = result.outputFiles[0]
   let length = contents.byteLength
   if (!verified && length > 1024 * 1024) return 'size exceeded'
@@ -133,7 +131,7 @@ export async function bundle(name: string, outname: string, verified = false) {
   if (meta.peerDependencies?.['@koishijs/plugin-console']) {
     for (const name of redirects) {
       const filename = resolve(outdir, name)
-      await writeFile(filename, `export * from "https://registry.koishi.chat/modules/@koishijs/plugin-console/dist/${name}";\n`)
+      await writeFile(filename, `export * from "${endpoint}/modules/@koishijs/plugin-console/dist/${name}";\n`)
     }
   }
 
@@ -145,11 +143,10 @@ export async function bundle(name: string, outname: string, verified = false) {
 if (require.main === module) {
   const argv = parse(process.argv.slice(2))
   if (!argv._.length) throw new Error('package name required')
-  const outname = '' + argv._[0]
-  const name = outname === 'koishi' ? '@koishijs/core' : outname
+  const name = '' + argv._[0]
   Promise.resolve().then(async () => {
-    await prepare(name, outname, 'latest')
-    const filename = resolve(__dirname, '../dist/modules', outname, 'index.js')
-    console.log(await bundle(name, outname, true) || filename)
+    await prepare(name, 'latest')
+    const filename = resolve(__dirname, '../dist/modules', name, 'index.js')
+    console.log(await bundle(name, true) || filename)
   })
 }
