@@ -1,4 +1,4 @@
-import { intersects, maxSatisfying } from 'semver'
+import { compare, intersects, maxSatisfying } from 'semver'
 import { Awaitable, defineProperty, Dict, pick, Time } from 'cosmokit'
 import pMap from 'p-map'
 
@@ -261,7 +261,7 @@ export default class Scanner {
       try {
         return !deprecated && declaredVersion && intersects(range, declaredVersion)
       } catch {}
-    }).reverse()
+    }).sort((a, b) => compare(b.version, a.version))
     if (!versions.length) return
 
     const latest = registry.versions[versions[0].version]
