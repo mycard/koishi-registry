@@ -228,9 +228,9 @@ export default class Scanner {
     const { step = 250, shared = [], concurrency = 5 } = config
     this.objects = []
     this.time = new Date().toUTCString()
-    let total = await this.search(0, config)
-    for (let offset = this.objects.length; step === total; offset += step) {
-      total = await this.search(offset, config)
+    const total = await this.search(0, config)
+    for (let offset = this.objects.length; offset < total; offset += step) {
+      await this.search(offset, config)
     }
     this.objects = this.objects.filter((object) => {
       const { name } = object.package
