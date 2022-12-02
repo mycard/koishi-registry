@@ -99,6 +99,7 @@ export interface SearchPackage extends DatedPackage {
 
 export interface Extension {
   score: Score
+  verified: boolean
   publishSize?: number
   installSize?: number
   downloads?: {
@@ -145,7 +146,6 @@ export interface SharedPackage extends DatedPackage {
 
 export interface AnalyzedPackage extends SearchPackage, Extension {
   shortname: string
-  verified: boolean
   license: string
   versions: Dict<Partial<RemotePackage>>
   manifest: Manifest
@@ -274,7 +274,7 @@ export default class Scanner {
       name,
       manifest,
       shortname,
-      verified: official,
+      verified: object.verified ?? official,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
       ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers', 'portable']),

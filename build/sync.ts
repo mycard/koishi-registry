@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 3
+const version = 4
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -73,9 +73,12 @@ const insecureDeps = [
 const additional = [
   'koishi-plugin-dialogue',
   'koishi-plugin-dice',
+  'koishi-plugin-forward',
   'koishi-plugin-github',
+  'koishi-plugin-novelai',
   'koishi-plugin-gocqhttp',
   'koishi-plugin-puppeteer',
+  'koishi-plugin-repeater',
   'koishi-plugin-screenshot',
 ]
 
@@ -193,8 +196,10 @@ class Synchronizer {
     const verified = new Set<string>()
     this.packages = await this.scanner.analyze({
       version: '4',
+      before(object) {
+        if (additional.includes(object.package.name)) object.verified = true
+      },
       async onSuccess(item) {
-        if (additional.includes(item.name)) item.verified = true
         if (item.verified) verified.add(item.shortname)
       },
       onFailure(name, reason) {

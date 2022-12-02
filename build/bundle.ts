@@ -28,6 +28,7 @@ export async function prepare(name: string, version: string) {
     },
     browser: {
       path: false,
+      fs: false,
     },
   }))
 
