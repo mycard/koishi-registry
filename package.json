@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/registry",
   "description": "Scan Package Manager for Koishi Plugins",
-  "version": "4.1.2",
+  "version": "4.1.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/registry/issues"
   },
-  "homepage": "https://koishi.js.org/market.html",
+  "homepage": "https://koishi.chat/market.html",
   "scripts": {
     "build": "tsc -b",
     "bundle": "node -r esbuild-register build/bundle.ts",
@@ -34,21 +34,21 @@
     "search"
   ],
   "devDependencies": {
-    "@types/node": "^18.6.4",
-    "@types/marked": "^4.0.3",
+    "@types/node": "^18.11.9",
+    "@types/marked": "^4.0.7",
     "@types/yargs-parser": "^21.0.0",
-    "axios": "^0.24.0",
-    "esbuild": "^0.14.51",
-    "esbuild-register": "^3.3.3",
+    "axios": "~1.1.3",
+    "esbuild": "^0.14.54",
+    "esbuild-register": "^3.4.1",
     "globby": "^11.1.0",
     "kleur": "^4.1.5",
-    "marked": "^4.0.18",
-    "typescript": "^4.8.3",
-    "yargs-parser": "^21.0.1"
+    "marked": "^4.2.3",
+    "typescript": "^4.9.3",
+    "yargs-parser": "^21.1.1"
   },
   "dependencies": {
     "cosmokit": "^1.3.3",
     "p-map": "^4.0.0",
-    "semver": "^7.3.7"
+    "semver": "^7.3.8"
   }
 }
