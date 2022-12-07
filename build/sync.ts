@@ -1,7 +1,7 @@
 import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '../src'
 import { bundle, locateEntry, prepare, sharedDeps } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
-import { defineProperty, Dict, pick, Time, valueMap } from 'cosmokit'
+import { defineProperty, Dict, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
 import { resolve } from 'path'
 import kleur from 'kleur'
@@ -71,6 +71,11 @@ const insecureDeps = [
 ]
 
 const additional = [
+  'koishi-plugin-assets-local',
+  'koishi-plugin-assets-git',
+  'koishi-plugin-assets-s3',
+  'koishi-plugin-assets-smms',
+  'koishi-plugin-assets-remote',
   'koishi-plugin-dialogue',
   'koishi-plugin-dice',
   'koishi-plugin-forward',
@@ -284,7 +289,7 @@ class Synchronizer {
       }
 
       // we don't need version details
-      item.versions = pick(item.versions, [item.version])
+      delete item.versions
 
       // pre-render markdown description
       item.manifest.description = valueMap(item.manifest.description, text => marked
@@ -298,7 +303,7 @@ class Synchronizer {
     await writeFile(resolve(outdir, 'index.json'), JSON.stringify(this.scanner))
 
     this.packages.sort((a, b) => b.score.final - a.score.final)
-    const content = JSON.stringify({ timestamp: Date.now(), objects: this.packages, shared: this.scanner.shared })
+    const content = JSON.stringify({ timestamp: Date.now(), objects: this.packages })
     await writeFile(resolve(outdir, 'market.json'), content)
 
     // remove unused packages

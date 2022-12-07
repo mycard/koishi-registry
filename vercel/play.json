@@ -1,5 +1,5 @@
 {
-  "name": "koishi-play",
+  "name": "play",
   "rewrites": [{
     "source": "/(.*)",
     "destination": "/index.html"
