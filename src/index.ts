@@ -137,7 +137,6 @@ export interface SearchResult {
 export interface MarketResult {
   timestamp: number
   objects: AnalyzedPackage[]
-  shared: SharedPackage[]
 }
 
 export interface SharedPackage extends DatedPackage {
@@ -147,8 +146,8 @@ export interface SharedPackage extends DatedPackage {
 export interface AnalyzedPackage extends SearchPackage, Extension {
   shortname: string
   license: string
-  versions: Dict<Partial<RemotePackage>>
   manifest: Manifest
+  versions?: Dict<Partial<RemotePackage>>
 }
 
 export interface CollectConfig {
