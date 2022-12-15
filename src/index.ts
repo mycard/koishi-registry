@@ -171,6 +171,12 @@ export interface ScanConfig extends CollectConfig, AnalyzeConfig {
   request<T>(url: string): Promise<T>
 }
 
+const stopWords = [
+  'koishi',
+  'plugin',
+  'bot',
+]
+
 export function conclude(meta: PackageJson) {
   const manifest: Manifest = {
     description: {
@@ -264,20 +270,24 @@ export default class Scanner {
     if (!versions.length) return
 
     const latest = registry.versions[versions[0].version]
-    latest.keywords ??= []
     const manifest = conclude(latest)
     if (manifest.hidden) return
+
+    const keywords = (latest.keywords ?? []).filter((keyword) => {
+      return !keyword.includes(':') && !stopWords.some(word => keyword.includes(word))
+    })
 
     const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
     const analyzed: AnalyzedPackage = {
       name,
       manifest,
       shortname,
+      keywords,
       verified: object.verified ?? official,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
       ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers', 'portable']),
-      ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
+      ...pick(latest, ['version', 'description', 'license', 'author']),
     }
     defineProperty(analyzed, 'object', object)
     return analyzed
