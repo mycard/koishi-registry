@@ -21,7 +21,7 @@ export interface PackageJson extends BasePackage, Partial<Record<DependencyType,
   module?: string
   bin?: string | Dict<string>
   exports?: PackageJson.Exports
-  koishi?: Manifest
+  koishi?: Partial<Manifest>
   keywords: string[]
   dependencies?: Dict<string>
   devDependencies?: Dict<string>
@@ -45,13 +45,17 @@ export interface Manifest {
   browser?: boolean
   category?: string
   public?: string[]
-  description?: Dict<string>
-  service?: {
-    required?: string[]
-    optional?: string[]
-    implements?: string[]
+  description: Dict<string>
+  service: Manifest.Service
+  locales: string[]
+}
+
+export namespace Manifest {
+  export interface Service {
+    required: string[]
+    optional: string[]
+    implements: string[]
   }
-  locales?: string[]
 }
 
 export interface RemotePackage extends PackageJson {
@@ -158,7 +162,7 @@ export interface CollectConfig {
 }
 
 export interface AnalyzeConfig {
-  version?: string
+  version: string
   concurrency?: number
   before?(object: SearchObject): void
   onSuccess?(item: AnalyzedPackage, object: SearchObject): Awaitable<void>
@@ -243,16 +247,17 @@ export default class Scanner {
       const community = /(^|\/)koishi-plugin-.+/.test(name)
       return !object.ignored && (official || community)
     })
-    this.shared = await pMap<string, SharedPackage>(shared, async (name) => {
+    this.shared = (await pMap(shared, async (name) => {
       const registry = await this.request<Registry>(`/${name}`)
       const version = maxSatisfying(Object.keys(registry.versions), '*')
+      if (!version) return
       return {
         ...pick(registry, ['name', 'description']),
         version,
         date: registry.time.modified,
         versions: pick(registry.versions, [version]),
       }
-    }, { concurrency })
+    }, { concurrency })).filter(isNonNullable)
     this.total = this.objects.length
   }
 
@@ -318,6 +323,10 @@ export default class Scanner {
       }
     }, { concurrency })
 
-    return result.filter(Boolean)
+    return result.filter(isNonNullable)
   }
+}
+
+function isNonNullable<T>(value: T): value is Exclude<T, null | undefined | void> {
+  return value !== null && value !== undefined
 }
