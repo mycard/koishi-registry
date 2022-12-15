@@ -179,6 +179,8 @@ const stopWords = [
   'koishi',
   'plugin',
   'bot',
+  'coolq',
+  'cqhttp',
 ]
 
 export function conclude(meta: PackageJson) {
@@ -278,11 +280,15 @@ export default class Scanner {
     const manifest = conclude(latest)
     if (manifest.hidden) return
 
-    const keywords = (latest.keywords ?? []).filter((keyword) => {
-      return !keyword.includes(':') && !stopWords.some(word => keyword.includes(word))
-    })
-
     const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
+    const keywords = (latest.keywords ?? [])
+      .map(keyword => keyword.toLowerCase())
+      .filter((keyword) => {
+        return !keyword.includes(':')
+          && !shortname.includes(keyword)
+          && !stopWords.some(word => keyword.includes(word))
+      })
+
     const analyzed: AnalyzedPackage = {
       name,
       manifest,
