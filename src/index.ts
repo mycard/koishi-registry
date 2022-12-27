@@ -105,9 +105,9 @@ export interface DatedPackage extends BasePackage {
 export interface SearchPackage extends DatedPackage {
   links: Dict<string>
   author: User
+  keywords: string[]
   publisher: User
   maintainers: User[]
-  keywords: string[]
 }
 
 export interface Extension {
@@ -157,6 +157,7 @@ export interface SharedPackage extends DatedPackage {
 }
 
 export interface AnalyzedPackage extends SearchPackage, Extension {
+  contributors: User[]
   shortname: string
   license: string
   manifest: Manifest
@@ -309,6 +310,7 @@ export default class Scanner {
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers', 'portable']),
       ...pick(latest, ['version', 'description', 'license', 'author', 'contributors']),
     }
+    analyzed.contributors ??= analyzed.author ? [analyzed.author] : []
     defineProperty(analyzed, 'object', object)
     return analyzed
   }

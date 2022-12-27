@@ -289,7 +289,10 @@ class Synchronizer {
       }
 
       // we don't need version details
+      delete item.author
       delete item.versions
+      delete item.publisher
+      delete item.maintainers
 
       // pre-render markdown description
       item.manifest.description = valueMap(item.manifest.description, text => marked
