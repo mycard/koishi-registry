@@ -5,6 +5,7 @@ import pMap from 'p-map'
 export interface User {
   name: string
   email: string
+  url?: string
   username?: string
 }
 
@@ -20,17 +21,24 @@ export interface PackageJson extends BasePackage, Partial<Record<DependencyType,
   main?: string
   module?: string
   bin?: string | Dict<string>
+  scripts?: Dict<string>
   exports?: PackageJson.Exports
   koishi?: Partial<Manifest>
   keywords: string[]
-  dependencies?: Dict<string>
-  devDependencies?: Dict<string>
-  peerDependencies?: Dict<string>
-  optionalDependencies?: Dict<string>
+  engines?: Dict<string>
+  os?: string[]
+  cpu?: string[]
+  overrides?: Dict<PackageJson.Overrides>
+  peerDependenciesMeta?: Dict<PackageJson.PeerMeta>
 }
 
 export namespace PackageJson {
   export type Exports = string | { [key: string]: Exports }
+  export type Overrides = string | { [key: string]: Overrides }
+
+  export interface PeerMeta {
+    optional?: boolean
+  }
 }
 
 export interface IconSvg {
@@ -61,6 +69,7 @@ export namespace Manifest {
 export interface RemotePackage extends PackageJson {
   deprecated?: string
   author: User
+  contributors: User[]
   maintainers: User[]
   license: string
   dist: RemotePackage.Dist
@@ -298,7 +307,7 @@ export default class Scanner {
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
       ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers', 'portable']),
-      ...pick(latest, ['version', 'description', 'license', 'author']),
+      ...pick(latest, ['version', 'description', 'license', 'author', 'contributors']),
     }
     defineProperty(analyzed, 'object', object)
     return analyzed
