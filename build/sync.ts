@@ -66,7 +66,7 @@ function softmax(x: number) {
 
 type Subjects = 'maintenance' | 'popularity' | 'quality'
 
-const insecureDeps = [
+const insecure = [
   'koishi-thirdeye',
 ]
 
@@ -80,7 +80,7 @@ const additional = [
   'koishi-plugin-dice',
   'koishi-plugin-forward',
   'koishi-plugin-github',
-  'koishi-plugin-novelai',
+  'koishi-plugin-migration',
   'koishi-plugin-gocqhttp',
   'koishi-plugin-puppeteer',
   'koishi-plugin-repeater',
@@ -96,8 +96,8 @@ const weights: Record<Subjects, number> = {
 const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
   async maintenance(item, object) {
     if (item.verified) return 1
-    const meta = item.versions[item.version]
-    if (insecureDeps.some(name => meta.dependencies?.[name])) return 0
+    const latest = item.versions[item.version]
+    if (insecure.some(name => latest.dependencies?.[name])) return 0
     return item.portable ? 0.75 : 0.5
   },
   async popularity(item, object) {
