@@ -1,5 +1,5 @@
 import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '../src'
-import { bundle, locateEntry, prepare, sharedDeps } from './bundle'
+import { bundle, check, locateEntry, prepare, sharedDeps } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { defineProperty, Dict, Time, valueMap } from 'cosmokit'
 import { marked } from 'marked'
@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 3
+const version = 4
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -66,10 +66,6 @@ function softmax(x: number) {
 
 type Subjects = 'maintenance' | 'popularity' | 'quality'
 
-const insecure = [
-  'koishi-thirdeye',
-]
-
 const additional = [
   'koishi-plugin-assets-local',
   'koishi-plugin-assets-git',
@@ -88,17 +84,19 @@ const additional = [
 ]
 
 const weights: Record<Subjects, number> = {
-  maintenance: 0.2,
-  popularity: 0.5,
+  maintenance: 0.3,
+  popularity: 0.4,
   quality: 0.3,
 }
 
 const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
   async maintenance(item, object) {
     if (item.verified) return 1
-    const latest = item.versions[item.version]
-    if (insecure.some(name => latest.dependencies?.[name])) return 0
-    return item.portable ? 0.75 : 0.5
+    if (item.insecure) return 0
+    let score = 0.25
+    if (item.portable) score += 0.25
+    if (item.links.repository) score += 0.25
+    return score
   },
   async popularity(item, object) {
     const downloads = await getDownloads(item.name)
@@ -229,6 +227,20 @@ class Synchronizer {
   }
 
   async bundle(name: string, version: string, verified: boolean, message = '') {
+    try {
+      await prepare(name, version)
+    } catch {
+      log(kleur.red(`${name}@${version}: prepare failed`))
+      return { portable: false, insecure: true }
+    }
+
+    try {
+      await check(name, verified)
+    } catch {
+      log(kleur.red(`${name}@${version}: security check failed`))
+      return { portable: false, insecure: true }
+    }
+
     const meta = this.packages.find(item => item.name === name)?.versions[version]
     if (!message && meta) {
       if (meta.koishi?.browser === false) {
@@ -237,15 +249,13 @@ class Synchronizer {
         message = 'no browser entry'
       }
     }
-    message = message
-      || await catchError('prepare failed', () => prepare(name, version))
-      || await catchError('bundle failed', () => bundle(name, verified))
+    message = message || await catchError('bundle failed', () => bundle(name, verified))
     if (message) {
       log(kleur.red(`${name}@${version}: ${message}`))
     } else {
       log(kleur.green(`${name}@${version}: success`))
     }
-    return !message
+    return { portable: !message, insecure: false }
   }
 
   async bundleAll() {
@@ -254,8 +264,8 @@ class Synchronizer {
       if (!this.hasUpdate(name)) {
         current.portable = this.legacy[name].portable
       } else {
-        const message = await this.bundle(name, current.version, true)
-        current.portable = !message
+        const result = await this.bundle(name, current.version, true)
+        current.portable = result.portable
       }
     }
 
@@ -263,6 +273,7 @@ class Synchronizer {
       const legacy = this.legacy[item.name]
       if (!this.hasUpdate(item.name)) {
         item.object.package.portable = item.portable = legacy.portable
+        item.object.package.insecure = item.insecure = legacy.insecure
         for (const key of ['downloads', 'installSize', 'publishSize', 'score']) {
           item.object[key] = item[key] = legacy.object[key]
         }
@@ -272,7 +283,9 @@ class Synchronizer {
         if (item.installSize > 5 * 1024 * 1024 && !item.verified) {
           message = 'size exceeded'
         }
-        item.object.package.portable = item.portable = await this.bundle(item.name, item.version, item.verified, message)
+        const result = await this.bundle(item.name, item.version, item.verified, message)
+        item.object.package.portable = item.portable = result.portable
+        item.object.package.insecure = item.insecure = result.insecure
 
         // evaluate score
         item.score.final = 0

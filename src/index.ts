@@ -98,6 +98,7 @@ export interface Registry extends BasePackage {
 
 export interface DatedPackage extends BasePackage {
   date: string
+  insecure?: boolean
   portable?: boolean
   object?: SearchObject
 }

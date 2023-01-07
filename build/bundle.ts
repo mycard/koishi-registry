@@ -1,5 +1,5 @@
 import { PackageJson } from '../src'
-import { mkdir, readFile, rm, writeFile } from 'fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
 import { exec, ExecOptions } from 'child_process'
 import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
@@ -64,6 +64,30 @@ const redirects = [
   'client.js',
   'element.js',
 ]
+
+const insecure = [
+  'koishi-thirdeye',
+]
+
+export async function check(name: string, verified = false) {
+  await traverse(resolve(tempDir, name))
+}
+
+async function traverse(cwd: string) {
+  const dirents = await readdir(cwd, { withFileTypes: true })
+  for (const dirent of dirents) {
+    if (dirent.isDirectory()) {
+      await traverse(resolve(cwd, dirent.name))
+    } else if (dirent.name.endsWith('.node')) {
+      throw new Error('native modules not allowed')
+    } else if (dirent.name === 'package.json') {
+      const meta: PackageJson = JSON.parse(await readFile(resolve(cwd, dirent.name), 'utf8'))
+      if (insecure.includes(meta.name)) {
+        throw new Error('insecure modules not allowed')
+      }
+    }
+  }
+}
 
 export async function bundle(name: string, verified = false) {
   const cwd = resolve(tempDir, name)
