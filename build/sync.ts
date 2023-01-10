@@ -67,11 +67,6 @@ function softmax(x: number) {
 type Subjects = 'maintenance' | 'popularity' | 'quality'
 
 const additional = [
-  'koishi-plugin-assets-local',
-  'koishi-plugin-assets-git',
-  'koishi-plugin-assets-s3',
-  'koishi-plugin-assets-smms',
-  'koishi-plugin-assets-remote',
   'koishi-plugin-dialogue',
   'koishi-plugin-dice',
   'koishi-plugin-forward',
@@ -80,7 +75,7 @@ const additional = [
   'koishi-plugin-gocqhttp',
   'koishi-plugin-puppeteer',
   'koishi-plugin-repeater',
-  'koishi-plugin-screenshot',
+  'koishi-plugin-respondent',
 ]
 
 const weights: Record<Subjects, number> = {
@@ -92,7 +87,7 @@ const weights: Record<Subjects, number> = {
 const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
   async maintenance(item, object) {
     if (item.verified) return 1
-    if (item.insecure) return 0
+    if (item.insecure || item.manifest.preview) return 0
     let score = 0.25
     if (item.portable) score += 0.25
     if (item.links.repository) score += 0.25
@@ -272,8 +267,8 @@ class Synchronizer {
     await pMap(this.packages, async (item) => {
       const legacy = this.legacy[item.name]
       if (!this.hasUpdate(item.name)) {
-        item.object.package.portable = item.portable = legacy.portable
-        item.object.package.insecure = item.insecure = legacy.insecure
+        item.portable = item.object.package.portable = legacy.portable
+        item.insecure ||= item.object.package.insecure = legacy.insecure
         for (const key of ['downloads', 'installSize', 'publishSize', 'score']) {
           item.object[key] = item[key] = legacy.object[key]
         }
@@ -284,8 +279,8 @@ class Synchronizer {
           message = 'size exceeded'
         }
         const result = await this.bundle(item.name, item.version, item.verified, message)
-        item.object.package.portable = item.portable = result.portable
-        item.object.package.insecure = item.insecure = result.insecure
+        item.portable = item.object.package.portable = result.portable
+        item.insecure ||= item.object.package.insecure = result.insecure
 
         // evaluate score
         item.score.final = 0

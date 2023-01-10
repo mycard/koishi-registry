@@ -50,6 +50,8 @@ export interface IconSvg {
 export interface Manifest {
   icon?: IconSvg
   hidden?: boolean
+  preview?: boolean
+  insecure?: boolean
   browser?: boolean
   category?: string
   public?: string[]
@@ -289,7 +291,6 @@ export default class Scanner {
 
     const latest = registry.versions[versions[0].version]
     const manifest = conclude(latest)
-    if (manifest.hidden) return
 
     const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
     const keywords = (latest.keywords ?? [])
@@ -306,6 +307,7 @@ export default class Scanner {
       shortname,
       keywords,
       verified: object.verified ?? official,
+      insecure: object.package.insecure || manifest.insecure,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
       ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers', 'portable']),
