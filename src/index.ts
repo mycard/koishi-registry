@@ -89,10 +89,7 @@ export namespace RemotePackage {
 
 export interface Registry extends BasePackage {
   versions: Dict<RemotePackage>
-  time: {
-    created: string
-    modified: string
-  }
+  time: Dict<string>
   license: string
   readme: string
   readmeFilename: string
@@ -164,6 +161,8 @@ export interface AnalyzedPackage extends SearchPackage, Extension {
   shortname: string
   license: string
   manifest: Manifest
+  createdAt: string
+  updatedAt: string
   versions?: Dict<Partial<RemotePackage>>
 }
 
@@ -258,8 +257,8 @@ export default class Scanner {
     }
     this.objects = this.objects.filter((object) => {
       const { name } = object.package
-      const official = /^@koishijs\/plugin-.+/.test(name)
-      const community = /(^|\/)koishi-plugin-.+/.test(name)
+      const official = /^@koishijs\/plugin-[a-z-]+/.test(name)
+      const community = /(^|\/)koishi-plugin-[a-z-]+/.test(name)
       return !object.ignored && (official || community)
     })
     this.shared = (await pMap(shared, async (name) => {
@@ -292,6 +291,7 @@ export default class Scanner {
     const latest = registry.versions[versions[0].version]
     const manifest = conclude(latest)
 
+    const times = versions.map(item => registry.time[item.version]).sort()
     const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
     const keywords = (latest.keywords ?? [])
       .map(keyword => keyword.toLowerCase())
@@ -306,6 +306,8 @@ export default class Scanner {
       manifest,
       shortname,
       keywords,
+      createdAt: times[0],
+      updatedAt: times[times.length - 1],
       verified: object.verified ?? official,
       insecure: object.package.insecure || manifest.insecure,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),

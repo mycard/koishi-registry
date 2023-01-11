@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 4
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -299,8 +299,6 @@ class Synchronizer {
       // we don't need version details
       delete item.author
       delete item.versions
-      delete item.publisher
-      delete item.maintainers
 
       // pre-render markdown description
       item.manifest.description = valueMap(item.manifest.description, text => marked
