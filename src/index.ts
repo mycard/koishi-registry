@@ -257,8 +257,8 @@ export default class Scanner {
     }
     this.objects = this.objects.filter((object) => {
       const { name } = object.package
-      const official = /^@koishijs\/plugin-[a-z-]+/.test(name)
-      const community = /(^|\/)koishi-plugin-[a-z-]+/.test(name)
+      const official = /^@koishijs\/plugin-[0-9a-z-]+$/.test(name)
+      const community = /(^|\/)koishi-plugin-[0-9a-z-]+$/.test(name)
       return !object.ignored && (official || community)
     })
     this.shared = (await pMap(shared, async (name) => {
