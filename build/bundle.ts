@@ -66,7 +66,7 @@ const redirects = [
 ]
 
 const insecure = [
-  'koishi-thirdeye',
+  'reflect-metadata',
 ]
 
 export async function check(name: string, verified = false) {
