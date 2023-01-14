@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/registry",
   "description": "Scan Package Manager for Koishi Plugins",
-  "version": "4.4.2",
+  "version": "4.4.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -35,7 +35,6 @@
   ],
   "devDependencies": {
     "@types/node": "^18.11.17",
-    "@types/marked": "^4.0.8",
     "@types/semver": "^7.3.13",
     "@types/yargs-parser": "^21.0.0",
     "axios": "~1.1.3",
@@ -43,7 +42,6 @@
     "esbuild-register": "^3.4.2",
     "globby": "^11.1.0",
     "kleur": "^4.1.5",
-    "marked": "^4.2.4",
     "typescript": "^4.9.4",
     "yargs-parser": "^21.1.1"
   },

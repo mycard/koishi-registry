@@ -170,6 +170,7 @@ export interface CollectConfig {
   step?: number
   timeout?: number
   shared?: string[]
+  ignored?: string[]
   concurrency?: number
 }
 
@@ -248,7 +249,7 @@ export default class Scanner {
   }
 
   public async collect(config: CollectConfig = {}) {
-    const { step = 250, shared = [], concurrency = 5 } = config
+    const { step = 250, shared = [], ignored = [], concurrency = 5 } = config
     this.objects = []
     this.time = new Date().toUTCString()
     const total = await this.search(0, config)
@@ -259,7 +260,7 @@ export default class Scanner {
       const { name } = object.package
       const official = /^@koishijs\/plugin-[0-9a-z-]+$/.test(name)
       const community = /(^|\/)koishi-plugin-[0-9a-z-]+$/.test(name)
-      return !object.ignored && (official || community)
+      return !object.ignored && !ignored.includes(name) && (official || community)
     })
     this.shared = (await pMap(shared, async (name) => {
       const registry = await this.request<Registry>(`/${name}`)

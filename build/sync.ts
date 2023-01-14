@@ -1,14 +1,13 @@
 import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '../src'
-import { bundle, check, locateEntry, prepare, sharedDeps } from './bundle'
+import { bundle, check, ignored, locateEntry, prepare, shared } from './bundle'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
-import { defineProperty, Dict, Time, valueMap } from 'cosmokit'
-import { marked } from 'marked'
+import { defineProperty, Dict, Time } from 'cosmokit'
 import { resolve } from 'path'
 import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 4
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -153,7 +152,7 @@ class Synchronizer {
   async check() {
     const [legacy] = await Promise.all([
       getLegacy(outdir),
-      this.scanner.collect({ shared: sharedDeps }),
+      this.scanner.collect({ shared, ignored }),
     ])
 
     this.latest = makeDict(this.scanner)
@@ -254,7 +253,7 @@ class Synchronizer {
   }
 
   async bundleAll() {
-    for (const name of sharedDeps) {
+    for (const name of shared) {
       const current = this.latest[name]
       if (!this.hasUpdate(name)) {
         current.portable = this.legacy[name].portable
@@ -299,11 +298,6 @@ class Synchronizer {
       // we don't need version details
       delete item.author
       delete item.versions
-
-      // pre-render markdown description
-      item.manifest.description = valueMap(item.manifest.description, text => marked
-        .parseInline(text)
-        .replace('<a ', '<a target="_blank" rel="noopener noreferrer" '))
     }, { concurrency: 5 })
   }
 
@@ -325,7 +319,7 @@ class Synchronizer {
       }
     }
     for (const folder of folders) {
-      if (sharedDeps.includes(folder)) continue
+      if (shared.includes(folder)) continue
       if (this.packages.find(item => item.name === folder && item.portable)) continue
       await rm(outdir + '/modules/' + folder, { recursive: true, force: true })
     }

@@ -51,11 +51,13 @@ export function locateEntry(meta: Partial<PackageJson>) {
   return meta.module
 }
 
-export const sharedDeps = [
+export const shared = [
   'koishi',
   '@koishijs/helpers',
   '@koishijs/loader',
 ]
+
+export const ignored = []
 
 const redirects = [
   'vue.js',
@@ -95,7 +97,7 @@ export async function bundle(name: string, verified = false) {
   const meta: PackageJson = require(name + '/package.json')
   const entry = locateEntry(meta) || meta.main
   const basedir = dirname(require.resolve(name + '/package.json'))
-  const external = new Set([...sharedDeps, ...Object.keys(meta.peerDependencies || {})])
+  const external = new Set([...shared, ...Object.keys(meta.peerDependencies || {})])
   const result = await build({
     entryPoints: [resolve(basedir, entry)],
     bundle: true,
