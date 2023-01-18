@@ -280,19 +280,23 @@ export default class Scanner {
     const { name } = object.package
     const official = name.startsWith('@koishijs/plugin-')
     const registry = await this.request<Registry>(`/${name}`)
-    const versions = Object.values(registry.versions).filter((remote) => {
-      const { peerDependencies = {}, deprecated } = remote
+    const compatible = Object.values(registry.versions).filter((remote) => {
+      const { peerDependencies = {} } = remote
       const declaredVersion = peerDependencies['koishi']
       try {
-        return !deprecated && declaredVersion && intersects(range, declaredVersion)
+        return declaredVersion && intersects(range, declaredVersion)
       } catch {}
-    }).sort((a, b) => compare(b.version, a.version))
+    })
+
+    const versions = compatible
+      .filter(item => !item.deprecated)
+      .sort((a, b) => compare(b.version, a.version))
     if (!versions.length) return
 
     const latest = registry.versions[versions[0].version]
     const manifest = conclude(latest)
 
-    const times = versions.map(item => registry.time[item.version]).sort()
+    const times = compatible.map(item => registry.time[item.version]).sort()
     const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
     const keywords = (latest.keywords ?? [])
       .map(keyword => keyword.toLowerCase())
