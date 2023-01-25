@@ -4,6 +4,7 @@ import { exec, ExecOptions } from 'child_process'
 import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
+import { insecure, shared } from './utils'
 import parse from 'yargs-parser'
 import globby from 'globby'
 
@@ -51,24 +52,12 @@ export function locateEntry(meta: Partial<PackageJson>) {
   return meta.module
 }
 
-export const shared = [
-  'koishi',
-  '@koishijs/helpers',
-  '@koishijs/loader',
-]
-
-export const ignored = []
-
 const redirects = [
   'vue.js',
   'vue-router.js',
   'vueuse.js',
   'client.js',
   'element.js',
-]
-
-const insecure = [
-  'reflect-metadata',
 ]
 
 export async function check(name: string, verified = false) {

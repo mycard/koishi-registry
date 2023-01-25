@@ -1,5 +1,6 @@
 import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '../src'
-import { bundle, check, ignored, locateEntry, prepare, shared } from './bundle'
+import { bundle, check, locateEntry, prepare } from './bundle'
+import { categories, ignored, shared } from './utils'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { defineProperty, Dict, Time } from 'cosmokit'
 import { resolve } from 'path'
@@ -8,13 +9,6 @@ import axios from 'axios'
 import pMap from 'p-map'
 
 const version = 4
-const categories: Dict<string> = {}
-
-for (const [key, list] of Object.entries(require('../data/categories')) as [string, string[]][]) {
-  for (const name of list) {
-    categories[name] = key
-  }
-}
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })

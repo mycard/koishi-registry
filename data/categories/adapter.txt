@@ -1,0 +1,15 @@
+adapter-discord
+adapter-discourse
+adapter-feishu
+adapter-kook
+adapter-matrix
+adapter-minecraft
+adapter-onebot
+adapter-qqguild
+adapter-telegram
+adapter-telegram-ex
+adapter-wechat-official
+adapter-wechaty
+adapter-wecom
+gocqhttp
+@zerxz/gocqhttp

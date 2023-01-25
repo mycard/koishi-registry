@@ -1,0 +1,12 @@
+baidu
+douban
+ekwing-fucker
+gameinfo
+javbus
+magi
+mikan
+oeis
+search-bing
+steaminfo
+weather
+@nonebot/weather-lite

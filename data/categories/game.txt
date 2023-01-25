@@ -1,0 +1,17 @@
+achievement
+chess
+couplet
+cube
+draw
+favor
+fortune
+gamewallpaper-byripple
+genshin-gacha
+guess-number
+hangman
+marry
+plp
+puzzle
+@nonebot/cybersensoji
+@nonebot/draw
+@nonebot/jrrp
