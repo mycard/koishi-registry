@@ -1,6 +1,6 @@
 import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '../src'
 import { bundle, check, locateEntry, prepare } from './bundle'
-import { categories, ignored, shared } from './utils'
+import { categories, ignored, shared, verified } from './utils'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { defineProperty, Dict, Time } from 'cosmokit'
 import { resolve } from 'path'
@@ -66,19 +66,6 @@ function softmax(x: number) {
 }
 
 type Subjects = 'maintenance' | 'popularity' | 'quality'
-
-const additional = [
-  'koishi-plugin-cron',
-  'koishi-plugin-dialogue',
-  'koishi-plugin-dice',
-  'koishi-plugin-forward',
-  'koishi-plugin-github',
-  'koishi-plugin-migration',
-  'koishi-plugin-gocqhttp',
-  'koishi-plugin-puppeteer',
-  'koishi-plugin-repeater',
-  'koishi-plugin-respondent',
-]
 
 const weights: Record<Subjects, number> = {
   maintenance: 0.3,
@@ -207,14 +194,14 @@ class Synchronizer {
 
   async analyze() {
     // check versions
-    const verified = new Set<string>()
+    const shortnames = new Set<string>()
     this.packages = await this.scanner.analyze({
       version: '4',
       before(object) {
-        if (additional.includes(object.package.name)) object.verified = true
+        if (verified.includes(object.package.name)) object.verified = true
       },
       async onSuccess(item) {
-        if (item.verified) verified.add(item.shortname)
+        if (item.verified) shortnames.add(item.shortname)
       },
       onFailure(name, reason) {
         console.error(`Failed to analyze ${name}: ${reason}`)
@@ -224,7 +211,7 @@ class Synchronizer {
     // resolve name conflicts
     for (let index = this.packages.length - 1; index >= 0; index--) {
       const item = this.packages[index]
-      if (item.verified || !verified.has(item.shortname)) continue
+      if (item.verified || !shortnames.has(item.shortname)) continue
       this.packages.splice(index, 1)
       item.object.ignored = true
     }

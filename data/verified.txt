@@ -1,0 +1,10 @@
+koishi-plugin-cron
+koishi-plugin-dialogue
+koishi-plugin-dice
+koishi-plugin-forward
+koishi-plugin-github
+koishi-plugin-migration
+koishi-plugin-gocqhttp
+koishi-plugin-puppeteer
+koishi-plugin-repeater
+koishi-plugin-respondent
