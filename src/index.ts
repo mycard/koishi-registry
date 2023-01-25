@@ -97,6 +97,7 @@ export interface Registry extends BasePackage {
 
 export interface DatedPackage extends BasePackage {
   date: string
+  category?: string
   insecure?: boolean
   portable?: boolean
   object?: SearchObject
@@ -314,6 +315,7 @@ export default class Scanner {
       createdAt: times[0],
       updatedAt: times[times.length - 1],
       verified: object.verified ?? official,
+      category: object.package.category || manifest.category,
       insecure: object.package.insecure || manifest.insecure,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
       ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),

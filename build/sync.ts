@@ -7,7 +7,14 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 3
+const version = 4
+const categories: Dict<string> = {}
+
+for (const [key, list] of Object.entries(require('../data/categories')) as [string, string[]][]) {
+  for (const name of list) {
+    categories[name] = key
+  }
+}
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -18,6 +25,7 @@ async function getLegacy(dirname: string) {
   }
 }
 
+const REFRESH_INTERVAL = 12 * 60 * 60 * 1000
 const BASE_URL = 'https://registry.npmjs.com'
 
 function makeDict(result: SearchResult) {
@@ -66,6 +74,7 @@ function softmax(x: number) {
 type Subjects = 'maintenance' | 'popularity' | 'quality'
 
 const additional = [
+  'koishi-plugin-cron',
   'koishi-plugin-dialogue',
   'koishi-plugin-dice',
   'koishi-plugin-forward',
@@ -106,8 +115,6 @@ const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject)
   },
 }
 
-const REFRESH_INTERVAL = 24 * 60 * 60 * 1000
-
 let counter = 0
 async function step<T>(title: string, callback: () => T | Promise<T>) {
   const startTime = Date.now()
@@ -134,6 +141,7 @@ class Synchronizer {
   private latest: Dict<DatedPackage>
   private legacy: Dict<DatedPackage>
   private packages: AnalyzedPackage[]
+  private uncategorized: string[] = []
   private scanner = new Scanner(async (url) => {
     const { data } = await axios.get(BASE_URL + url)
     return data
@@ -157,15 +165,14 @@ class Synchronizer {
 
     this.latest = makeDict(this.scanner)
     this.legacy = makeDict(legacy)
-    this.forceUpdate = version !== legacy.version
-    if (this.forceUpdate) {
+    if (version !== legacy.version) {
       log('force update due to version mismatch')
-      return true
+      return this.forceUpdate = true
     }
 
     if (+new Date(this.scanner.time) - +new Date(legacy.time) > REFRESH_INTERVAL) {
       log('force update due to cache expiration')
-      return true
+      return this.forceUpdate = true
     }
 
     let hasDiff = false
@@ -215,9 +222,9 @@ class Synchronizer {
 
   hasUpdate(name: string) {
     if (this.forceUpdate) return true
-    const legacy = this.legacy[name]?.date
-    const latest = this.latest[name]?.date
-    return legacy !== latest || this.legacy[name].portable === undefined
+    if (this.legacy[name]?.date !== this.latest[name]?.date) return true
+    if (this.legacy[name].portable === undefined) return true
+    if (this.legacy[name].insecure === undefined) return true
   }
 
   async bundle(name: string, version: string, verified: boolean, message = '') {
@@ -267,7 +274,7 @@ class Synchronizer {
       const legacy = this.legacy[item.name]
       if (!this.hasUpdate(item.name)) {
         item.portable = item.object.package.portable = legacy.portable
-        item.insecure ||= item.object.package.insecure = legacy.insecure
+        item.insecure = item.object.package.insecure = legacy.insecure
         for (const key of ['downloads', 'installSize', 'publishSize', 'score']) {
           item.object[key] = item[key] = legacy.object[key]
         }
@@ -279,7 +286,7 @@ class Synchronizer {
         }
         const result = await this.bundle(item.name, item.version, item.verified, message)
         item.portable = item.object.package.portable = result.portable
-        item.insecure ||= item.object.package.insecure = result.insecure
+        item.insecure = item.object.package.insecure = result.insecure
 
         // evaluate score
         item.score.final = 0
@@ -295,6 +302,12 @@ class Synchronizer {
         }))
       }
 
+      if (item.shortname in categories) {
+        item.category = item.object.package.category = categories[item.shortname]
+      } else {
+        this.uncategorized.push(item.shortname)
+      }
+
       // we don't need version details
       delete item.author
       delete item.versions
@@ -308,6 +321,9 @@ class Synchronizer {
     this.packages.sort((a, b) => b.score.final - a.score.final)
     const content = JSON.stringify({ timestamp: Date.now(), objects: this.packages })
     await writeFile(resolve(outdir, 'market.json'), content)
+
+    this.uncategorized.sort()
+    await writeFile(resolve(outdir, 'uncategorized.txt'), this.uncategorized.join('\n'))
 
     // remove unused packages
     const folders = await readdir(outdir + '/modules')

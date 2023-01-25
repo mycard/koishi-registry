@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/registry",
   "description": "Scan Package Manager for Koishi Plugins",
-  "version": "4.4.4",
+  "version": "4.4.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -19,9 +19,9 @@
   "homepage": "https://koishi.chat/market.html",
   "scripts": {
     "build": "tsc -b",
-    "bundle": "node -r esbuild-register build/bundle.ts",
-    "play": "node -r esbuild-register build/play.ts",
-    "sync": "node -r esbuild-register build/sync.ts"
+    "bundle": "node -r esbuild-register -r yml-register build/bundle.ts",
+    "play": "node -r esbuild-register -r yml-register build/play.ts",
+    "sync": "node -r esbuild-register -r yml-register build/sync.ts"
   },
   "keywords": [
     "bot",
@@ -43,7 +43,8 @@
     "globby": "^11.1.0",
     "kleur": "^4.1.5",
     "typescript": "^4.9.4",
-    "yargs-parser": "^21.1.1"
+    "yargs-parser": "^21.1.1",
+    "yml-register": "^1.1.0"
   },
   "dependencies": {
     "cosmokit": "^1.4.0",

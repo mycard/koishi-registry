@@ -1,0 +1,350 @@
+# 核心功能
+core:
+  - admin
+  - bind
+  - broadcast
+  - callme
+  - commands
+  - cron
+  - echo
+  - help
+  - locales
+  - messages
+  - mock
+  - puppeteer
+  - rate-limit
+  - schedule
+
+# 适配器
+adapter:
+  - adapter-discord
+  - adapter-discourse
+  - adapter-feishu
+  - adapter-kook
+  - adapter-matrix
+  - adapter-minecraft
+  - adapter-onebot
+  - adapter-qqguild
+  - adapter-telegram
+  - adapter-wechat-official
+  - adapter-wechaty
+  - adapter-wecom
+  - gocqhttp
+  - '@zerxz/gocqhttp'
+
+# 持久化
+storage:
+  - assets-git
+  - assets-local
+  - assets-remote
+  - assets-s3
+  - assets-smms
+  - cache-aragami
+  - cache-memcached
+  - database-memory
+  - database-mongo
+  - database-mysql
+  - database-sqlite
+  - elasticsearch
+  - influxdb
+  - influxdb-collect
+  - typeorm
+
+# 扩展功能
+extension:
+  - api
+  - apisend
+  - blockly
+  - currency
+  - currency-command
+  - eval
+  - express
+  - markdown
+  - money
+  - nonebot
+  - spawn
+  - xff
+  - xff2
+
+# 控制台
+console:
+  - analytics
+  - auth
+  - changelog
+  - chat
+  - click-colorful
+  - console
+  - console-update-tips
+  - dataview
+  - desktop
+  - envinfo
+  - footer
+  - insight
+  - logger
+  - market
+  - migration
+  - never-gonna-give-you-up
+  - sandbox
+  - schema-guide
+  - status
+
+# 管理工具
+manage:
+  - alertmanager
+  - aliyun-censor
+  - autokick
+  - blacklist
+  - blame
+  - boom
+  - chinfo
+  - devplugin
+  - dispose
+  - eula
+  - feedback
+  - inspect
+  - recall
+  - rr-image-censor
+  - sentry
+  - shutdown
+  - sudo
+  - switch
+  - text-censor
+
+# 行为预设
+preset:
+  - action
+  - addfriend
+  - advanced-forward
+  - auto-reply
+  - command-webhook
+  - dcqq-relay
+  - dialogue
+  - dialogue-author
+  - dialogue-console
+  - dialogue-context
+  - dialogue-flow
+  - dialogue-rate-limit
+  - dialogue-time
+  - forward
+  - guild-verifier
+  - img2cmd
+  - relay
+  - respondent
+  - responder2
+  - rr-welcome
+  - scene-training
+  - simple-welcome
+  - verifier
+  - '@myrtus/forward'
+
+# 搜索服务
+search:
+  - baidu
+  - douban
+  - ekwing-fucker
+  - gameinfo
+  - javbus
+  - magi
+  - mikan
+  - oeis
+  - search-bing
+  - steaminfo
+  - weather
+  - '@nonebot/weather-lite'
+
+# 订阅服务
+subscribe:
+  - 60snews
+  - bdynamic
+  - blive
+  - dailygames
+  - epic-get-free-game
+  - freegames-subscribe
+  - gamenews
+  - hitokoto
+  - market-info
+  - moyu
+  - rss
+  - rsshub
+  - steam-status-subscribe
+  - today-in-history
+  - todaynews
+  - weibo-hot
+  - xiaoai-morningnews
+  - '@yunkuangao/tianxing'
+
+# 实用工具
+tools:
+  - 158-drive-cracker
+  - abbreviation
+  - acs
+  - anonymous-email
+  - aria2
+  - bilibili
+  - brainfuck
+  - bvid
+  - capture-website
+  - chentong-drive-cracker
+  - dice-killer
+  - dns
+  - github
+  - gfm
+  - glot
+  - idcard-checker
+  - instagram-image-video-downloader
+  - ip-checker
+  - jiutian-toolkit
+  - lanzou-drive-cracker
+  - libvirt
+  - maya
+  - mediawiki
+  - mowned
+  - music
+  - nbnhhsh
+  - notion
+  - pack-my-message
+  - pointfree
+  - pterodactyl
+  - qrcode
+  - random-number
+  - screenshot
+  - shadowban
+  - shorturl
+  - spawn-handwrite-img
+  - star-history
+  - tex
+  - tianyi-drive-cracker
+  - twitter-images-videos
+  - v2ex
+  - video-parser
+  - who-at-me
+  - whois
+  - whoviews
+  - wyblacklist
+  - youtube
+  - '@myrtus/mediawiki'
+  - '@myrtus/tool'
+  - '@nonebot/abbrreply'
+  - '@nonebot/analysis-bilibili'
+  - '@nonebot/biliav'
+  - '@nonebot/code'
+
+# 翻译服务
+translator:
+  - rr-translator
+  - translator-baidu
+  - translator-bing
+  - translator-youdao
+
+# AI 服务
+ai:
+  - chatgpt
+  - davinci-003
+  - deep-danbooru
+  - diffsinger-huggingface
+  - facercg
+  - genshin-voice
+  - hlai-ocr
+  - hlai-painter
+  - mollyai
+  - novel-ai-api
+  - novelai
+  - openchat
+  - qingyunke-free
+  - rasa-nlg-dict
+  - rasa-nlu
+  - rr-st
+  - rryth
+  - sd-extra
+  - sd-interroage
+  - sd-switch
+  - sd-taylor
+  - wolfram-alpha
+  - '@tomlbz/openai'
+
+# 图片服务
+image:
+  - 4k-background
+  - animal-picture
+  - answer-book
+  - autopic
+  - image-search
+  - picapi
+  - pics
+  - picsource-localfs
+  - picsource-lolicon
+  - picsource-miraikoi
+  - picsource-sina
+  - picsource-twitter
+  - picsource-yande
+  - random-dog
+  - random-wallpaper
+  - twdne
+
+# 趣味交互
+fun:
+  - 5k
+  - aircon
+  - alipay-voice
+  - bullshit-generator
+  - color
+  - crazy-thursday
+  - dice
+  - dicex
+  - duplicate-checker
+  - emojimix
+  - httpcat
+  - huanlin-sleep
+  - human-sign
+  - meme
+  - nonsense
+  - nyan
+  - petpet
+  - petpet-plus
+  - phlogo
+  - repeater
+  - sleep-manage
+  - thesaurus
+  - '@nonebot/person'
+
+# 娱乐玩法
+game:
+  - achievement
+  - chess
+  - couplet
+  - draw
+  - favor
+  - fortune
+  - gamewallpaper-byripple
+  - genshin-gacha
+  - guess-number
+  - hangman
+  - marry
+  - plp
+  - puzzle
+
+# 游戏工具
+gametool:
+  - ffxiv-eorzea
+  - ffxiv-lodestone
+  - ffxiv-macrodict
+  - gameserver
+  - genshin-resin
+  - genshin-toolkit
+  - genshin-voice
+  - genshinvoice-plus
+  - maimai
+  - maimai-potato
+  - mcinfo
+  - mcping
+  - splatoon
+  - srvpro-roomlist
+  - stnb
+  - tabulate
+  - ygocard
+  - ygotournament
+  - '@nonebot/acc-calculate'
+  - '@nonebot/gscode'
+  - '@nonebot/warframe'
+  - '@nonebot/ygo'
+  - '@nonebot/ygo-trade'
