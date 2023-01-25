@@ -148,7 +148,7 @@ class Synchronizer {
   })
 
   async start() {
-    const shouldUpdate = await step('check update', () => this.check())
+    const shouldUpdate = await step('check update', () => this.checkAll())
     if (!shouldUpdate) return
     console.log('::set-output name=update::true')
 
@@ -157,7 +157,33 @@ class Synchronizer {
     await step('generate output', () => this.generate())
   }
 
-  async check() {
+  checkUpdate(name: string) {
+    const date1 = this.legacy[name]?.date
+    const date2 = this.latest[name]?.date
+    if (date1 === date2) {
+      return this.checkCategoryUpdate(name)
+    } else if (!date1) {
+      log(kleur.green(`- ${name}: added`))
+    } else if (!date2) {
+      log(kleur.red(`- ${name}: removed`))
+    } else {
+      log(kleur.yellow(`- ${name}: updated`))
+    }
+    return true
+  }
+
+  checkCategoryUpdate(name: string) {
+    const official = /^@koishijs\/plugin-[0-9a-z-]+$/.test(name)
+    const community = /(^|\/)koishi-plugin-[0-9a-z-]+$/.test(name)
+    if (!official && !community) return
+    const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
+    if (this.legacy[name].category !== categories[shortname]) {
+      log(kleur.blue(`- ${name}: categorized`))
+      return true
+    }
+  }
+
+  async checkAll() {
     const [legacy] = await Promise.all([
       getLegacy(outdir),
       this.scanner.collect({ shared, ignored }),
@@ -177,17 +203,7 @@ class Synchronizer {
 
     let hasDiff = false
     for (const name in { ...this.latest, ...this.legacy }) {
-      const date1 = this.legacy[name]?.date
-      const date2 = this.latest[name]?.date
-      if (date1 === date2) continue
-      if (!date1) {
-        log(kleur.green(`- ${name}: added`))
-      } else if (!date2) {
-        log(kleur.red(`- ${name}: removed`))
-      } else {
-        log(kleur.yellow(`- ${name}: updated`))
-      }
-      hasDiff = true
+      hasDiff ||= this.checkUpdate(name)
     }
     if (!hasDiff) {
       log('all packages are up-to-date')
@@ -220,11 +236,11 @@ class Synchronizer {
     }
   }
 
-  hasUpdate(name: string) {
+  shouldBundle(name: string) {
     if (this.forceUpdate) return true
     if (this.legacy[name]?.date !== this.latest[name]?.date) return true
-    if (this.legacy[name].portable === undefined) return true
-    if (this.legacy[name].insecure === undefined) return true
+    if (this.legacy[name]?.portable === undefined) return true
+    if (this.legacy[name]?.insecure === undefined) return true
   }
 
   async bundle(name: string, version: string, verified: boolean, message = '') {
@@ -262,7 +278,7 @@ class Synchronizer {
   async bundleAll() {
     for (const name of shared) {
       const current = this.latest[name]
-      if (!this.hasUpdate(name)) {
+      if (!this.shouldBundle(name)) {
         current.portable = this.legacy[name].portable
       } else {
         const result = await this.bundle(name, current.version, true)
@@ -272,7 +288,7 @@ class Synchronizer {
 
     await pMap(this.packages, async (item) => {
       const legacy = this.legacy[item.name]
-      if (!this.hasUpdate(item.name)) {
+      if (!this.shouldBundle(item.name)) {
         item.portable = item.object.package.portable = legacy.portable
         item.insecure = item.object.package.insecure = legacy.insecure
         for (const key of ['downloads', 'installSize', 'publishSize', 'score']) {
