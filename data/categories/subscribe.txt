@@ -12,7 +12,9 @@ rss
 rsshub
 steam-status-subscribe
 today-in-history
+today-word
 todaynews
+wangyiyun-word
 weibo-hot
 xiaoai-morningnews
 @yunkuangao/tianxing

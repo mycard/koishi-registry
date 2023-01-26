@@ -9,6 +9,7 @@ express
 markdown
 money
 nonebot
+presence
 spawn
 xff
 xff2

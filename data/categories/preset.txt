@@ -22,5 +22,6 @@ responder2
 rr-welcome
 scene-training
 simple-welcome
+spammer
 verifier
 @myrtus/forward

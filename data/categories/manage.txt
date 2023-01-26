@@ -3,7 +3,6 @@ aliyun-censor
 autokick
 blacklist
 blame
-boom
 chinfo
 devplugin
 dispose

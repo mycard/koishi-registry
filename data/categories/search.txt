@@ -5,6 +5,7 @@ gameinfo
 javbus
 magi
 mikan
+moebgm
 oeis
 search-bing
 steaminfo
