@@ -283,7 +283,7 @@ class Synchronizer {
         }
         const result = await this.bundle(item.name, item.version, item.verified, message)
         item.portable = item.object.package.portable = result.portable
-        item.insecure = item.object.package.insecure = result.insecure
+        item.insecure = item.object.package.insecure = result.insecure || item.manifest.insecure
 
         // evaluate score
         item.score.final = 0
@@ -306,6 +306,7 @@ class Synchronizer {
       }
 
       // we don't need version details
+      delete item.description
       delete item.author
       delete item.versions
     }, { concurrency: 5 })

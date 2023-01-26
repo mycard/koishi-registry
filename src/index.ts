@@ -1,5 +1,6 @@
 import { compare, intersects, maxSatisfying } from 'semver'
 import { Awaitable, defineProperty, Dict, pick, Time } from 'cosmokit'
+import { Ensure } from './utils'
 import pMap from 'p-map'
 
 export interface User {
@@ -199,20 +200,29 @@ const stopWords = [
 
 export function conclude(meta: PackageJson) {
   const manifest: Manifest = {
-    description: {
-      en: meta.description,
-    },
-    locales: [],
-    ...meta.koishi,
+    hidden: Ensure.boolean(meta.koishi?.hidden),
+    preview: Ensure.boolean(meta.koishi?.preview),
+    insecure: Ensure.boolean(meta.koishi?.insecure),
+    browser: Ensure.boolean(meta.koishi?.browser),
+    category: Ensure.string(meta.koishi?.category),
+    public: Ensure.array(meta.koishi?.public),
+    description: Ensure.dict(meta.koishi?.description, {
+      en: Ensure.string(meta.description, ''),
+    }),
+    locales: Ensure.array(meta.koishi?.locales, []),
     service: {
-      required: [],
-      optional: [],
-      implements: [],
-      ...meta.koishi?.service,
+      required: Ensure.array(meta.koishi?.service?.required, []),
+      optional: Ensure.array(meta.koishi?.service?.optional, []),
+      implements: Ensure.array(meta.koishi?.service?.implements, []),
     },
   }
 
-  for (const keyword of meta.keywords ?? []) {
+  for (const key in manifest.description) {
+    manifest.description[key] = manifest.description[key].slice(0, 1024)
+  }
+
+  meta.keywords = Ensure.array(meta.keywords, []).filter((keyword) => {
+    if (!keyword.includes(':')) return true
     if (keyword === 'market:hidden') {
       manifest.hidden = true
     } else if (keyword.startsWith('required:')) {
@@ -224,7 +234,7 @@ export function conclude(meta: PackageJson) {
     } else if (keyword.startsWith('locale:')) {
       manifest.locales.push(keyword.slice(7))
     }
-  }
+  })
 
   return manifest
 }
