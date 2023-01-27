@@ -10,6 +10,7 @@ maimai
 maimai-potato
 mcinfo
 mcping
+oni-rocket-calculator
 splatoon
 srvpro-roomlist
 stnb

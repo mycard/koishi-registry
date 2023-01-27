@@ -33,6 +33,7 @@ pointfree
 pterodactyl
 qrcode
 random-number
+railgun
 rr-translator
 screenshot
 shadowban

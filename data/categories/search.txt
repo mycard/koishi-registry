@@ -1,4 +1,5 @@
 baidu
+blibli-list
 douban
 ekwing-fucker
 gameinfo

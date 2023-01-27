@@ -16,6 +16,7 @@ greeting
 guild-verifier
 huanlin-welcome
 img2cmd
+nyan
 relay
 respondent
 responder2
@@ -23,5 +24,6 @@ rr-welcome
 scene-training
 simple-welcome
 spammer
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 verifier
 @myrtus/forward

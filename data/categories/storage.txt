@@ -6,7 +6,10 @@ assets-s3
 assets-s3-ex
 assets-smms
 cache-aragami
+cache-database
 cache-memcached
+cache-memory
+cache-redis
 database-memory
 database-mongo
 database-mysql

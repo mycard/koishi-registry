@@ -2,13 +2,17 @@ achievement
 chess
 couplet
 cube
+dice
+dicex
 draw
+dujitang-word
 favor
 fortune
 gamewallpaper-byripple
 genshin-gacha
 guess-number
 hangman
+lottery
 marry
 plp
 puzzle

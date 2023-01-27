@@ -1,6 +1,8 @@
 api
 apisend
 blockly
+boom
+ci
 captcha-resolver
 currency
 currency-command
