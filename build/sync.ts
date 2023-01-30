@@ -159,7 +159,7 @@ class Synchronizer {
     if (!official && !community) return
     const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
     if (this.legacy[name].category !== categories[shortname]) {
-      log(kleur.blue(`- ${name}: categorized`))
+      log(kleur.blue(`- ${name}: categorized (${this.legacy[name].category} -> ${categories[shortname]})`))
       return true
     }
   }

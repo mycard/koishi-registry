@@ -7,7 +7,11 @@ export interface User {
   name: string
   email: string
   url?: string
-  username?: string
+}
+
+export interface RegistryUser {
+  email: string
+  username: string
 }
 
 export interface BasePackage {
@@ -71,8 +75,8 @@ export namespace Manifest {
 
 export interface RemotePackage extends PackageJson {
   deprecated?: string
-  author: User
-  contributors: User[]
+  author?: User
+  contributors?: User[]
   maintainers: User[]
   license: string
   dist: RemotePackage.Dist
@@ -106,10 +110,11 @@ export interface DatedPackage extends BasePackage {
 
 export interface SearchPackage extends DatedPackage {
   links: Dict<string>
-  author: User
+  author?: User
+  contributors?: User[]
   keywords: string[]
-  publisher: User
-  maintainers: User[]
+  publisher: RegistryUser
+  maintainers: RegistryUser[]
 }
 
 export interface Extension {
@@ -328,11 +333,11 @@ export default class Scanner {
       category: object.package.category || manifest.category,
       insecure: object.package.insecure || manifest.insecure,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
+      contributors: latest.contributors ?? (latest.author ? [latest.author] : []),
       ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers', 'portable']),
-      ...pick(latest, ['version', 'description', 'license', 'author', 'contributors']),
+      ...pick(latest, ['version', 'description', 'license', 'author']),
     }
-    analyzed.contributors ??= analyzed.author ? [analyzed.author] : []
     defineProperty(analyzed, 'object', object)
     return analyzed
   }
