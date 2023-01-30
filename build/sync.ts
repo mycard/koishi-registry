@@ -154,12 +154,8 @@ class Synchronizer {
   }
 
   checkCategoryUpdate(name: string) {
-    const official = /^@koishijs\/plugin-[0-9a-z-]+$/.test(name)
-    const community = /(^|\/)koishi-plugin-[0-9a-z-]+$/.test(name)
-    if (!official && !community) return
-    const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
-    if (this.legacy[name].category !== categories[shortname]) {
-      log(kleur.blue(`- ${name}: categorized (${this.legacy[name].category} -> ${categories[shortname]})`))
+    if (this.legacy[name].category !== categories[name]) {
+      log(kleur.blue(`- ${name}: categorized`))
       return true
     }
   }
@@ -283,7 +279,7 @@ class Synchronizer {
         }
         const result = await this.bundle(item.name, item.version, item.verified, message)
         item.portable = item.object.package.portable = result.portable
-        item.insecure = item.object.package.insecure = result.insecure || item.manifest.insecure
+        item.insecure = item.object.package.insecure = result.insecure || !!item.manifest.insecure
 
         // evaluate score
         item.score.final = 0
@@ -299,10 +295,10 @@ class Synchronizer {
         }))
       }
 
-      if (item.shortname in categories) {
-        item.category = item.object.package.category = categories[item.shortname]
+      if (item.name in categories) {
+        item.category = item.object.package.category = categories[item.name]
       } else {
-        this.uncategorized.push(item.shortname)
+        this.uncategorized.push(item.name)
       }
 
       // we don't need version details
