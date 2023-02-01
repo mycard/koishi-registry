@@ -1,9 +1,12 @@
 @nonebot/koishi-plugin-cybersensoji
 @nonebot/koishi-plugin-draw
 @nonebot/koishi-plugin-jrrp
+@nonebot/koishi-plugin-person
 
 koishi-plugin-achievement
+koishi-plugin-aircon
 koishi-plugin-chess
+koishi-plugin-countdown
 koishi-plugin-couplet
 koishi-plugin-cube
 koishi-plugin-dice
@@ -16,8 +19,12 @@ koishi-plugin-gamewallpaper-byripple
 koishi-plugin-genshin-gacha
 koishi-plugin-guess-number
 koishi-plugin-hangman
+koishi-plugin-huanlin-sleep
+koishi-plugin-intimacy
 koishi-plugin-jrrp
 koishi-plugin-lottery
 koishi-plugin-marry
 koishi-plugin-plp
 koishi-plugin-puzzle
+koishi-plugin-repeater
+koishi-plugin-sleep-manage

@@ -1,6 +1,7 @@
 @koishijs/plugin-verifier
 @myrtus/koishi-plugin-forward
 
+koishi-plugin-act
 koishi-plugin-action
 koishi-plugin-addfriend
 koishi-plugin-advanced-forward

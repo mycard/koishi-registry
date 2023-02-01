@@ -3,6 +3,7 @@
 @koishijs/plugin-sudo
 @koishijs/plugin-switch
 
+koishi-plugin-acs
 koishi-plugin-alertmanager
 koishi-plugin-aliyun-censor
 koishi-plugin-autokick
