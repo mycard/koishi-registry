@@ -125,7 +125,7 @@ async function catchError<T>(message: string, callback: () => T | Promise<T>) {
   }
 }
 
-const outdir = resolve(__dirname, '../dist')
+const outdir = resolve(__dirname, '../../../dist')
 
 class Synchronizer {
   private forceUpdate: boolean

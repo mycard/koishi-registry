@@ -16,7 +16,7 @@ function spawnAsync(args: string[], options?: ExecOptions) {
 }
 
 const endpoint = 'https://registry.koishi.chat'
-const tempDir = resolve(__dirname, '../temp')
+const tempDir = resolve(__dirname, '../../../temp')
 
 export async function prepare(name: string, version: string) {
   const cwd = resolve(tempDir, name)
@@ -122,7 +122,7 @@ export async function bundle(name: string, verified = false) {
     }],
   })
 
-  const outdir = resolve(__dirname, '../dist/modules', name)
+  const outdir = resolve(__dirname, '../../../dist/modules', name)
   const { contents } = result.outputFiles[0]
   let length = contents.byteLength
   if (!verified && length > 1024 * 1024) return 'size exceeded'
@@ -162,7 +162,7 @@ if (require.main === module) {
   const name = '' + argv._[0]
   Promise.resolve().then(async () => {
     await prepare(name, 'latest')
-    const filename = resolve(__dirname, '../dist/modules', name, 'index.js')
+    const filename = resolve(__dirname, '../../../dist/modules', name, 'index.js')
     console.log(await bundle(name, true) || filename)
   })
 }
