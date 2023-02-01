@@ -4,14 +4,10 @@ import { Ensure } from './utils'
 import pMap from 'p-map'
 
 export interface User {
-  name: string
+  name?: string
   email: string
   url?: string
-}
-
-export interface RegistryUser {
-  email: string
-  username: string
+  username?: string
 }
 
 export interface BasePackage {
@@ -113,12 +109,13 @@ export interface SearchPackage extends DatedPackage {
   author?: User
   contributors?: User[]
   keywords: string[]
-  publisher: RegistryUser
-  maintainers: RegistryUser[]
+  publisher: User
+  maintainers: User[]
 }
 
 export interface Extension {
   score: Score
+  rating: number
   verified: boolean
   publishSize?: number
   installSize?: number
@@ -136,7 +133,6 @@ export interface SearchObject extends Extension {
 export interface Score {
   final: number
   detail: Score.Detail
-  stars?: number
 }
 
 export namespace Score {
@@ -335,7 +331,7 @@ export default class Scanner {
       insecure: object.package.insecure || manifest.insecure,
       versions: Object.fromEntries(versions.map(item => [item.version, item])),
       contributors: latest.contributors ?? (latest.author ? [latest.author] : []),
-      ...pick(object, ['score', 'downloads', 'installSize', 'publishSize']),
+      ...pick(object, ['score', 'rating', 'downloads', 'installSize', 'publishSize']),
       ...pick(object.package, ['date', 'links', 'publisher', 'maintainers', 'portable']),
       ...pick(latest, ['version', 'description', 'license', 'author']),
     }

@@ -19,7 +19,7 @@ async function getLegacy(dirname: string) {
   }
 }
 
-const REFRESH_INTERVAL = 12 * 60 * 60 * 1000
+const REFRESH_INTERVAL = Time.day / 2
 const BASE_URL = 'https://registry.npmjs.com'
 
 function makeDict(result: SearchResult) {
@@ -65,6 +65,10 @@ function softmax(x: number) {
   return (1 - t) / (1 + t)
 }
 
+function minmax(x: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, x))
+}
+
 type Subjects = 'maintenance' | 'popularity' | 'quality'
 
 const weights: Record<Subjects, number> = {
@@ -76,16 +80,22 @@ const weights: Record<Subjects, number> = {
 const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
   async maintenance(item, object) {
     if (item.verified) return 1
-    if (item.insecure || item.manifest.preview) return 0
+    if (item.insecure) return 0
     let score = 0.4
+    if (item.manifest.preview) score -= 0.4
     if (item.portable) score += 0.2
     if (item.links.repository) score += 0.2
     return score
   },
   async popularity(item, object) {
-    const downloads = await getDownloads(item.name)
-    item.downloads = object.downloads = downloads
-    return softmax(downloads.lastMonth / 200)
+    try {
+      const downloads = await getDownloads(item.name)
+      item.downloads = object.downloads = downloads
+    } catch {}
+    const actual = item.downloads?.lastMonth ?? 0
+    const lifespan = minmax((Date.now() - +new Date(item.createdAt)) / Time.day, 7, 30)
+    const estimated = 250 * (30 - lifespan) / 23 + actual / lifespan * 30 * (lifespan - 7) / 23
+    return softmax(estimated / 200)
   },
   async quality(item, object) {
     const sizeInfo = await getSizeInfo(item.name)
@@ -294,7 +304,7 @@ class Synchronizer {
           item.score.detail[subject] = value
           item.score.final += weights[subject] * value
         }))
-        item.score.stars = Math.min(Math.max((item.score.final - 0.25) * 10, 0), 5)
+        item.rating = item.object.rating = Math.min(Math.max((item.score.final - 0.3) * 10, 0), 5)
       }
 
       if (item.name in categories) {
