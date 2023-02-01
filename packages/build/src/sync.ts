@@ -1,4 +1,4 @@
-import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '../src'
+import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '@koishijs/registry'
 import { bundle, check, locateEntry, prepare } from './bundle'
 import { categories, ignored, shared, verified } from './utils'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 2
+const version = 1
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -227,8 +227,6 @@ class Synchronizer {
   shouldBundle(name: string) {
     if (this.forceUpdate) return true
     if (this.legacy[name]?.date !== this.latest[name]?.date) return true
-    if (this.legacy[name]?.portable === undefined) return true
-    if (this.legacy[name]?.insecure === undefined) return true
   }
 
   async bundle(name: string, version: string, verified: boolean, message = '') {
@@ -277,6 +275,7 @@ class Synchronizer {
     await pMap(this.packages, async (item) => {
       const legacy = this.legacy[item.name]
       if (!this.shouldBundle(item.name)) {
+        console.log(item.name, legacy.object.rating)
         item.rating = item.object.rating = legacy.object.rating
         item.portable = item.object.package.portable = legacy.portable
         item.insecure = item.object.package.insecure = legacy.insecure

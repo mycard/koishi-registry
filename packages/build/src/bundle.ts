@@ -1,4 +1,4 @@
-import { PackageJson } from '../src'
+import { PackageJson } from '@koishijs/registry'
 import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
 import { exec, ExecOptions } from 'child_process'
 import { dirname, resolve } from 'path'

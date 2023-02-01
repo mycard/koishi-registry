@@ -1,14 +1,15 @@
 {
   "extends": "./tsconfig.base",
   "compilerOptions": {
-    "strict": true,
-    "outDir": "lib",
-    "rootDir": "src",
-    "declaration": true,
-    "composite": true,
-    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@koishijs/registry": [
+        "packages/core/src",
+      ],
+      "@koishijs/client-market": [
+        "packages/client/src",
+      ],
+    },
   },
-  "include": [
-    "src",
-  ],
+  "files": [],
 }
