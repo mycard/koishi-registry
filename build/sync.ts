@@ -69,17 +69,17 @@ type Subjects = 'maintenance' | 'popularity' | 'quality'
 
 const weights: Record<Subjects, number> = {
   maintenance: 0.3,
-  popularity: 0.4,
-  quality: 0.3,
+  popularity: 0.5,
+  quality: 0.2,
 }
 
 const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject) => Promise<number>> = {
   async maintenance(item, object) {
     if (item.verified) return 1
     if (item.insecure || item.manifest.preview) return 0
-    let score = 0.25
-    if (item.portable) score += 0.25
-    if (item.links.repository) score += 0.25
+    let score = 0.4
+    if (item.portable) score += 0.2
+    if (item.links.repository) score += 0.2
     return score
   },
   async popularity(item, object) {
@@ -178,14 +178,15 @@ class Synchronizer {
       return this.forceUpdate = true
     }
 
-    let hasDiff = false
+    let shouldUpdate = false
     for (const name in { ...this.latest, ...this.legacy }) {
-      hasDiff ||= this.checkUpdate(name)
+      const hasDiff = this.checkUpdate(name)
+      shouldUpdate ||= hasDiff
     }
-    if (!hasDiff) {
+    if (!shouldUpdate) {
       log('all packages are up-to-date')
     }
-    return hasDiff
+    return shouldUpdate
   }
 
   async analyze() {
@@ -293,6 +294,7 @@ class Synchronizer {
           item.score.detail[subject] = value
           item.score.final += weights[subject] * value
         }))
+        item.score.stars = Math.min(Math.max((item.score.final - 0.25) * 10, 0), 5)
       }
 
       if (item.name in categories) {
@@ -305,6 +307,7 @@ class Synchronizer {
       delete item.description
       delete item.author
       delete item.versions
+      delete item.score.detail
     }, { concurrency: 5 })
   }
 

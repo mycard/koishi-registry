@@ -136,6 +136,7 @@ export interface SearchObject extends Extension {
 export interface Score {
   final: number
   detail: Score.Detail
+  stars?: number
 }
 
 export namespace Score {
