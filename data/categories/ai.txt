@@ -1,5 +1,6 @@
 @tomlbz/koishi-plugin-openai
 
+koishi-plugin-ai-qa
 koishi-plugin-chatgpt
 koishi-plugin-davinci-003
 koishi-plugin-deep-danbooru

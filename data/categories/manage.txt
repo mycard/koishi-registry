@@ -13,6 +13,7 @@ koishi-plugin-devplugin
 koishi-plugin-dispose
 koishi-plugin-eula
 koishi-plugin-inspect
+koishi-plugin-qqgroup-manager
 koishi-plugin-rr-image-censor
 koishi-plugin-sentry
 koishi-plugin-shutdown

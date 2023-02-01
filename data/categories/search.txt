@@ -5,11 +5,13 @@ koishi-plugin-blibli-list
 koishi-plugin-douban
 koishi-plugin-ekwing-fucker
 koishi-plugin-gameinfo
+koishi-plugin-hpoi
 koishi-plugin-javbus
 koishi-plugin-magi
 koishi-plugin-mikan
 koishi-plugin-moebgm
 koishi-plugin-oeis
 koishi-plugin-search-bing
+koishi-plugin-steam-trading
 koishi-plugin-steaminfo
 koishi-plugin-weather

@@ -17,5 +17,7 @@ koishi-plugin-envinfo
 koishi-plugin-footer
 koishi-plugin-migration
 koishi-plugin-never-gonna-give-you-up
+koishi-plugin-presence
+koishi-plugin-presence-wakatime
 koishi-plugin-schema-guide
 koishi-plugin-spring-festival-ui

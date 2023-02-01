@@ -4,10 +4,12 @@
 @nonebot/koishi-plugin-ygo
 @nonebot/koishi-plugin-ygo-trade
 
+koishi-plugin-arcaea
 koishi-plugin-ffxiv-eorzea
 koishi-plugin-ffxiv-lodestone
 koishi-plugin-ffxiv-macrodict
 koishi-plugin-gameserver
+koishi-plugin-genshin-code
 koishi-plugin-genshin-resin
 koishi-plugin-genshin-toolkit
 koishi-plugin-genshin-voice

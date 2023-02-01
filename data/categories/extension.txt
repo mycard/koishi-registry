@@ -6,11 +6,12 @@ koishi-plugin-captcha-resolver
 koishi-plugin-currency
 koishi-plugin-currency-command
 koishi-plugin-eval
+koishi-plugin-eval-react-jsx
 koishi-plugin-express
+koishi-plugin-message-logger
 koishi-plugin-markdown
 koishi-plugin-money
 koishi-plugin-nonebot
-koishi-plugin-presence
 koishi-plugin-spawn
 koishi-plugin-xff
 koishi-plugin-xff2
