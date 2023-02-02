@@ -7,6 +7,7 @@ import HeartPulse from './heart-pulse.vue'
 import Insecure from './insecure.vue'
 import Newborn from './newborn.vue'
 import Preview from './preview.vue'
+import Search from './search.vue'
 import StarEmpty from './star-empty.vue'
 import StarFull from './star-full.vue'
 import StarHalf from './star-half.vue'
@@ -23,6 +24,7 @@ export default {
   'insecure': Insecure,
   'newborn': Newborn,
   'preview': Preview,
+  'search': Search,
   'star-empty': StarEmpty,
   'star-full': StarFull,
   'star-half': StarHalf,
