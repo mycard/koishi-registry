@@ -45,6 +45,35 @@ export const badges: Dict<Badge> = {
   },
 }
 
+interface Comparator {
+  text: string
+  icon: string
+  compare(a: AnalyzedPackage, b: AnalyzedPackage): number
+}
+
+export const comparators: Dict<Comparator> = {
+  rating: {
+    text: '按评分',
+    icon: 'star-full',
+    compare: (a, b) => b.rating - a.rating,
+  },
+  download: {
+    text: '按下载量',
+    icon: 'download',
+    compare: (a, b) => (b.downloads?.lastMonth ?? 0) - (a.downloads?.lastMonth ?? 0),
+  },
+  created: {
+    text: '按创建时间',
+    icon: 'heart-pulse',
+    compare: (a, b) => b.createdAt.localeCompare(a.createdAt),
+  },
+  updated: {
+    text: '按更新时间',
+    icon: 'tag',
+    compare: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
+  },
+}
+
 export const categories = {
   core: '核心功能',
   adapter: '适配器',
@@ -66,8 +95,21 @@ export function useMarket(market: () => AnalyzedPackage[]) {
   const words = ref([''])
 
   const all = computed(() => {
-    return Object.values(market()).filter((data) => {
+    return market().slice().filter((data) => {
       return !data.manifest.hidden || words.value.includes('show:hidden')
+    }).sort((a, b) => {
+      for (let word of words.value) {
+        if (!word.startsWith('sort:')) continue
+        let order = 1
+        if (word.endsWith('-asc')) {
+          order = -1
+          word = word.slice(0, -4)
+        } else if (word.endsWith('-desc')) {
+          word = word.slice(0, -5)
+        }
+        const comparator = comparators[word.slice(5)]
+        if (comparator) return comparator.compare(a, b) * order
+      }
     })
   })
 
@@ -80,7 +122,8 @@ export function useMarket(market: () => AnalyzedPackage[]) {
           negate = true
           word = word.slice(1)
         }
-        return validate(data, word, users) !== negate
+        const result = validate(data, word, users)
+        return typeof result !== 'boolean' || result !== negate
       })
     })
   })
@@ -140,8 +183,8 @@ export function validate(data: AnalyzedPackage, word: string, users: User[]) {
     if (word === 'is:insecure') return data.insecure
     if (word === 'is:preview') return data.manifest.preview
     return false
-  } else if (word.startsWith('show:')) {
-    return true
+  } else if (word.includes(':')) {
+    return
   }
 
   if (data.shortname.includes(word)) return true

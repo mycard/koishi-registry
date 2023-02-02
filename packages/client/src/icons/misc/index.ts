@@ -1,6 +1,9 @@
+import Asc from './asc.vue'
 import Balance from './balance.vue'
+import Desc from './desc.vue'
 import Download from './download.vue'
 import FileArchive from './file-archive.vue'
+import HeartPulse from './heart-pulse.vue'
 import Insecure from './insecure.vue'
 import Newborn from './newborn.vue'
 import Preview from './preview.vue'
@@ -11,9 +14,12 @@ import Tag from './tag.vue'
 import Verified from './verified.vue'
 
 export default {
+  'asc': Asc,
   'balance': Balance,
+  'desc': Desc,
   'download': Download,
   'file-archive': FileArchive,
+  'heart-pulse': HeartPulse,
   'insecure': Insecure,
   'newborn': Newborn,
   'preview': Preview,
