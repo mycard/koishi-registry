@@ -3,6 +3,10 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "lib",
+    "types": [
+      "element-plus/global",
+      "vite/client",
+    ],
   },
   "include": [
     "src",

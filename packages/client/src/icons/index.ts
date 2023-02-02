@@ -15,8 +15,8 @@ export default defineComponent({
     name: String,
   },
   render(props) {
-    return props.name && h(registry[props.name], {
+    return props.name ? h(registry[props.name], {
       class: 'market-icon',
-    })
+    }) : []
   },
 })

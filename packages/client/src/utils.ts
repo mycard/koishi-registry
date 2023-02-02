@@ -123,6 +123,8 @@ export function validate(data: AnalyzedPackage, word: string, users: User[]) {
   } else if (word.startsWith('using:')) {
     const name = word.slice(6)
     return service.required.includes(name) || service.optional.includes(name)
+  } else if (word.startsWith('category:')) {
+    return resolveCategory(data.category) === word.slice(9)
   } else if (word.startsWith('email:')) {
     return users.some(({ email }) => email === word.slice(6))
   } else if (word.startsWith('updated:<')) {

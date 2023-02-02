@@ -1,9 +1,9 @@
 <template>
-  <div class="market-card search-box">
+  <div class="search-box">
     <span
       v-for="(word, index) in modelValue.slice(0, -1)"
       :key="index" class="search-word"
-      @click="onClickWord"
+      @click="onClickWord(index)"
     >{{ word }}</span>
     <input
       placeholder="输入想要查询的插件名"

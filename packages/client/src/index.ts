@@ -1,6 +1,7 @@
-import SearchBox from './search-box.vue'
-import MarketIcon from './icon'
+import MarketSearch from './components/search.vue'
+import MarketPackage from './components/package.vue'
+import MarketIcon from './icons'
 
-export { SearchBox, MarketIcon }
+export { MarketIcon, MarketPackage, MarketSearch }
 
 export * from './utils'
