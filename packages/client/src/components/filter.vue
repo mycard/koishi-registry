@@ -3,31 +3,37 @@
     <div class="market-filter-title">
       <h2 class="text">排序</h2>
     </div>
-    <div
-      v-for="(item, key) in comparators" :key="key" class="market-filter-item"
-      :class="{ active: activeSort[0] === key }"
-      @click="toggleSort('sort:' + key)">
-      <span class="icon"><market-icon :name="item.icon"></market-icon></span>
-      <span class="text">{{ item.text }}</span>
-      <span class="spacer"></span>
-      <span class="order"><market-icon :name="activeSort[1]"></market-icon></span>
-    </div>
+    <template v-for="(item, key) in comparators" :key="key">
+      <div
+        v-if="!item.hidden"
+        class="market-filter-item"
+        :class="{ active: activeSort[0] === key }"
+        @click="toggleSort('sort:' + key)">
+        <span class="icon"><market-icon :name="item.icon"></market-icon></span>
+        <span class="text">{{ item.text }}</span>
+        <span class="spacer"></span>
+        <span class="order"><market-icon :name="activeSort[1]"></market-icon></span>
+      </div>
+    </template>
   </div>
   <div class="market-filter-group">
     <div class="market-filter-title">
       <h2 class="text">筛选</h2>
     </div>
-    <div
-      v-for="(badge, key) in badges" :key="key" class="market-filter-item"
-      :class="{ [key]: true, active: words.includes(badge.query), disabled: words.includes('-' + badge.query) }"
-      @click="toggleQuery(badge.query)">
-      <span class="icon"><market-icon :name="key"></market-icon></span>
-      <span class="text">{{ badge.text }}</span>
-      <span class="spacer"></span>
-      <span class="count" v-if="data">
-        {{ data.filter(item => badge.check(item)).length }}
-      </span>
-    </div>
+    <template v-for="(item, key) in badges" :key="key">
+      <div
+        v-if="!item.hidden"
+        class="market-filter-item"
+        :class="{ [key]: true, active: words.includes(item.query), disabled: words.includes(item.negate) }"
+        @click="toggleQuery(item)">
+        <span class="icon"><market-icon :name="key"></market-icon></span>
+        <span class="text">{{ item.text }}</span>
+        <span class="spacer"></span>
+        <span class="count" v-if="data">
+          {{ data.filter(x => item.check(x)).length }}
+        </span>
+      </div>
+    </template>
   </div>
   <div class="market-filter-group">
     <div class="market-filter-title">
@@ -50,7 +56,7 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { badges, comparators, categories, resolveCategory, MarketIcon } from '@koishijs/client-market'
+import { Badge, badges, comparators, categories, resolveCategory, MarketIcon } from '..'
 import { AnalyzedPackage } from '@koishijs/registry'
 
 const props = defineProps<{
@@ -118,12 +124,13 @@ function toggleCategory(word: string) {
   }
 }
 
-function toggleQuery(word: string) {
-  const index = words.value.findIndex(x => x === word || x === '-' + word)
+function toggleQuery(item: Badge) {
+  const { query, negate } = item
+  const index = words.value.findIndex(x => x === query || x === negate)
   if (index === -1) {
-    addWord(word)
-  } else if (words.value[index] === word) {
-    words.value[index] = '-' + word
+    addWord(query)
+  } else if (words.value[index] === query) {
+    words.value[index] = negate
   } else {
     words.value.splice(index, 1)
   }

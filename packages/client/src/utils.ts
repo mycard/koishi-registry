@@ -19,6 +19,8 @@ export interface Badge {
   text: string
   check(data: AnalyzedPackage): boolean
   query: string
+  negate: string
+  hidden?: boolean
 }
 
 export const badges: Dict<Badge> = {
@@ -26,27 +28,32 @@ export const badges: Dict<Badge> = {
     text: '官方认证',
     check: data => data.verified,
     query: 'is:verified',
+    negate: 'not:verified',
   },
   insecure: {
     text: '不安全',
     check: data => data.insecure,
     query: 'is:insecure',
+    negate: 'not:insecure',
   },
   preview: {
     text: '开发中',
     check: data => data.manifest.preview,
     query: 'is:preview',
+    negate: 'not:preview',
   },
   newborn: {
     text: '近期新增',
     check: data => data.createdAt >= aWeekAgo,
     query: `created:>${aWeekAgo}`,
+    negate: `created:<${aWeekAgo}`,
   },
 }
 
 interface Comparator {
   text: string
   icon: string
+  hidden?: boolean
   compare(a: AnalyzedPackage, b: AnalyzedPackage): number
 }
 
@@ -115,14 +122,8 @@ export function useMarket(market: () => AnalyzedPackage[]) {
   const packages = computed(() => {
     return all.value.filter((data) => {
       const users = getUsers(data)
-      return words.value.every(word => {
-        let negate = false
-        if (word.startsWith('-')) {
-          negate = true
-          word = word.slice(1)
-        }
-        const result = validate(data, word, users)
-        return typeof result !== 'boolean' || result !== negate
+      return words.value.every((word) => {
+        return validate(data, word, users)
       })
     })
   })
@@ -159,10 +160,15 @@ export function validate(data: AnalyzedPackage, word: string, users: User[]) {
   } else if (word.startsWith('is:')) {
     if (word === 'is:verified') return data.verified
     if (word === 'is:insecure') return data.insecure
-    if (word === 'is:preview') return data.manifest.preview
+    if (word === 'is:preview') return !!data.manifest.preview
     return false
+  } else if (word.startsWith('not:')) {
+    if (word === 'not:verified') return !data.verified
+    if (word === 'not:insecure') return !data.insecure
+    if (word === 'not:preview') return !data.manifest.preview
+    return true
   } else if (word.includes(':')) {
-    return
+    return true
   }
 
   if (data.shortname.includes(word)) return true
