@@ -77,6 +77,7 @@ const props = defineProps<{
 
 const badge = computed(() => {
   for (const type in badges) {
+    if (badges[type].hidden) continue
     if (validate(props.data, badges[type].query)) return { type, ...badges[type] }
   }
 })

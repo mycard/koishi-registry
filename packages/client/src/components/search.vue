@@ -37,16 +37,13 @@ const emit = defineEmits(['update:modelValue'])
 
 const words = ref<string[]>()
 
-watch(props.modelValue, (value) => {
+watch(() => props.modelValue, (value) => {
   words.value = value.slice()
 }, { immediate: true })
 
-watch(words, (value) => {
-  emit('update:modelValue', value)
-}, { deep: true })
-
 function onClickWord(index: number) {
   words.value.splice(index, 1)
+  emit('update:modelValue', words.value)
 }
 
 function onEnter() {
@@ -56,16 +53,19 @@ function onEnter() {
     words.value.pop()
   }
   words.value.push('')
+  emit('update:modelValue', words.value)
 }
 
 function onEscape(event: KeyboardEvent) {
   words.value[words.value.length - 1] = ''
+  emit('update:modelValue', words.value)
 }
 
 function onBackspace(event: KeyboardEvent) {
   if (words.value[words.value.length - 1] === '' && words.value.length > 1) {
     event.preventDefault()
     words.value.splice(words.value.length - 2, 1)
+    emit('update:modelValue', words.value)
   }
 }
 

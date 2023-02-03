@@ -22,7 +22,6 @@
     </div>
     <template v-for="(item, key) in badges" :key="key">
       <div
-        v-if="!item.hidden"
         class="market-filter-item"
         :class="{ [key]: true, active: words.includes(item.query), disabled: words.includes(item.negate) }"
         @click="toggleQuery(item, $event)">
@@ -56,8 +55,9 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { Badge, badges, validate, comparators, categories, resolveCategory, MarketIcon } from '..'
+import { Badge, badges, validate, comparators, categories, resolveCategory } from '../utils'
 import { AnalyzedPackage } from '@koishijs/registry'
+import MarketIcon from '../icons'
 
 const props = defineProps<{
   modelValue: string[]
@@ -68,13 +68,9 @@ const emit = defineEmits(['update:modelValue'])
 
 const words = ref<string[]>()
 
-watch(props.modelValue, (value) => {
+watch(() => props.modelValue, (value) => {
   words.value = value.slice()
 }, { immediate: true })
-
-watch(words, (value) => {
-  emit('update:modelValue', value)
-}, { deep: true })
 
 const activeSort = computed<string[]>(() => {
   let word = words.value.find(w => w.startsWith('sort:'))
@@ -111,6 +107,7 @@ function toggleSort(word: string, event: MouseEvent) {
   } else {
     words.value[index] = word
   }
+  emit('update:modelValue', words.value)
 }
 
 function toggleCategory(word: string, event: MouseEvent) {
@@ -122,6 +119,7 @@ function toggleCategory(word: string, event: MouseEvent) {
   } else {
     words.value[index] = word
   }
+  emit('update:modelValue', words.value)
 }
 
 function toggleQuery(item: Badge, event: MouseEvent) {
@@ -134,6 +132,7 @@ function toggleQuery(item: Badge, event: MouseEvent) {
   } else {
     words.value.splice(index, 1)
   }
+  emit('update:modelValue', words.value)
 }
 
 </script>
