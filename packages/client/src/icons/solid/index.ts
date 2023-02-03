@@ -1,5 +1,6 @@
 import Adapter from './adapter.vue'
 import Ai from './ai.vue'
+import All from './all.vue'
 import Console from './console.vue'
 import Core from './core.vue'
 import Extension from './extension.vue'
@@ -17,6 +18,7 @@ import Tool from './tool.vue'
 export default {
   'solid:adapter': Adapter,
   'solid:ai': Ai,
+  'solid:all': All,
   'solid:console': Console,
   'solid:core': Core,
   'solid:extension': Extension,
