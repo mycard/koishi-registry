@@ -1,7 +1,6 @@
 import { AnalyzedPackage, User } from '@koishijs/registry'
 import { computed, ref } from 'vue'
 import { Dict } from 'cosmokit'
-import md5 from 'spark-md5'
 
 export function getUsers(data: AnalyzedPackage) {
   const result: Record<string, User> = {}
@@ -95,7 +94,7 @@ export function useMarket(market: () => AnalyzedPackage[]) {
   const words = ref([''])
 
   const all = computed(() => {
-    return market().slice().filter((data) => {
+    return market()?.slice().filter((data) => {
       return !data.manifest.hidden || words.value.includes('show:hidden')
     }).sort((a, b) => {
       for (let word of words.value) {
@@ -129,27 +128,6 @@ export function useMarket(market: () => AnalyzedPackage[]) {
   })
 
   return { words, packages, all }
-}
-
-export function getAvatar(email: string, endpoint = 'https://s.gravatar.com') {
-  return endpoint
-    + '/avatar/'
-    + (email ? md5.hash(email.toLowerCase()) : '')
-    + '.png?d=mp'
-}
-
-function formatValue(value: number) {
-  return value >= 100 ? +value.toFixed() : +value.toFixed(1)
-}
-
-export function formatSize(value: number) {
-  if (value >= (1 << 20) * 1000) {
-    return formatValue(value / (1 << 30)) + ' GB'
-  } else if (value >= (1 << 10) * 1000) {
-    return formatValue(value / (1 << 20)) + ' MB'
-  } else {
-    return formatValue(value / (1 << 10)) + ' KB'
-  }
 }
 
 export function resolveCategory(name?: string) {

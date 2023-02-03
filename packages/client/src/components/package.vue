@@ -4,7 +4,7 @@
       <div class="left">
         <market-icon :name="'outline:' + resolveCategory(data.category)"></market-icon>
       </div>
-      <div class="right">
+      <div class="main">
         <h2 class="top">
           <a :href="data.links.homepage || data.links.repository" target="_blank" rel="noopener noreferrer">{{ data.shortname }}</a>
           <el-tooltip v-if="badge" placement="right" :content="badge.text">
@@ -20,7 +20,9 @@
             </div>
           </el-tooltip>
         </div>
-        <slot></slot>
+      </div>
+      <div class="right">
+        <slot name="action"></slot>
       </div>
     </div>
     <k-markdown inline class="desc" :source="data.manifest.description.zh || data.manifest.description.en"></k-markdown>
@@ -62,14 +64,15 @@
 
 import { computed } from 'vue'
 import { AnalyzedPackage } from '@koishijs/registry'
-import { badges, getAvatar, getUsers, formatSize, resolveCategory } from '@koishijs/client-market'
+import { badges, getUsers, resolveCategory } from '@koishijs/client-market'
 import MarketIcon from '../icons'
-import KMarkdown from 'marked-vue'
+import md5 from 'spark-md5'
 
 defineEmits(['query'])
 
 const props = defineProps<{
   data: AnalyzedPackage
+  gravatar?: string
 }>()
 
 const badge = computed(() => {
@@ -78,9 +81,30 @@ const badge = computed(() => {
   }
 })
 
+function getAvatar(email: string) {
+  return (props.gravatar || 'https://s.gravatar.com')
+    + '/avatar/'
+    + (email ? md5.hash(email.toLowerCase()) : '')
+    + '.png?d=mp'
+}
+
+function formatValue(value: number) {
+  return value >= 100 ? +value.toFixed() : +value.toFixed(1)
+}
+
+function formatSize(value: number) {
+  if (value >= (1 << 20) * 1000) {
+    return formatValue(value / (1 << 30)) + ' GB'
+  } else if (value >= (1 << 10) * 1000) {
+    return formatValue(value / (1 << 20)) + ' MB'
+  } else {
+    return formatValue(value / (1 << 10)) + ' KB'
+  }
+}
+
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
 .market-package {
   width: 100%;
@@ -105,12 +129,12 @@ const badge = computed(() => {
   .header {
     position: relative;
     display: flex;
-    gap: 1rem;
 
     .left {
       flex: 0 0 auto;
       width: 3.5rem;
       height: 3.5rem;
+      margin-right: 1rem;
       border-radius: 8px;
       border: 1px solid var(--k-color-border);
       box-sizing: border-box;
@@ -123,7 +147,7 @@ const badge = computed(() => {
       }
     }
 
-    .right {
+    .main {
       display: flex;
       flex-flow: column;
       justify-content: space-around;
@@ -134,7 +158,6 @@ const badge = computed(() => {
       font-size: 1.125rem;
       margin: 0;
       line-height: 1;
-      // padding-right: 4rem;
       display: flex;
       align-items: center;
 
@@ -205,11 +228,10 @@ const badge = computed(() => {
       }
     }
 
-    button.right {
-      position: absolute;
-      right: 0;
-      top: -1px;
-      padding: 0.35em 0.85em;
+    .right {
+      flex: 1 0 auto;
+      text-align: right;
+      position: relative;
     }
   }
 

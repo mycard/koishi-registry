@@ -7,7 +7,7 @@
         @click="onClickWord(index)"
       >{{ word }}</span>
       <input
-        placeholder="输入想要查询的插件名"
+        :placeholder="placeholder || '输入想要查询的插件名'"
         v-model="words[words.length - 1]"
         @blur="onEnter"
         @keydown.escape="onEscape"
@@ -28,6 +28,7 @@ import MarketIcon from '../icons'
 
 const props = defineProps<{
   modelValue: string[]
+  placeholder?: string
 }>()
 
 const emit = defineEmits(['update:modelValue'])
@@ -93,6 +94,7 @@ function onBackspace(event: KeyboardEvent) {
     height: 1.25rem;
     min-width: 10rem;
     font-size: 0.9em;
+    padding: 0;
     box-sizing: border-box;
     color: inherit;
     background-color: transparent;
