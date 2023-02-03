@@ -19,10 +19,18 @@ export interface Badge {
   text: string
   query: string
   negate: string
-  hidden?: boolean
+  hidden?(config: MarketConfig, type: 'card' | 'filter'): boolean
 }
 
 export const badges: Dict<Badge> = {
+  installed: {
+    text: '已下载',
+    query: 'is:installed',
+    negate: 'not:installed',
+    hidden(config, type) {
+      return !config.isInstalled || type === 'card'
+    },
+  },
   verified: {
     text: '官方认证',
     query: 'is:verified',
@@ -92,7 +100,15 @@ export const categories = {
   gametool: '游戏工具',
 }
 
-export function useMarket(market: () => AnalyzedPackage[]) {
+export interface MarketConfig {
+  isInstalled?(data: AnalyzedPackage): boolean
+}
+
+interface ValidateConfig extends MarketConfig {
+  users?: User[]
+}
+
+export function useMarket(market: () => AnalyzedPackage[], config: MarketConfig = {}) {
   const words = ref([''])
 
   const all = computed(() => {
@@ -118,12 +134,12 @@ export function useMarket(market: () => AnalyzedPackage[]) {
     return all.value.filter((data) => {
       const users = getUsers(data)
       return words.value.every((word) => {
-        return validate(data, word, users)
+        return validate(data, word, { ...config, users })
       })
     })
   })
 
-  return { words, packages, all }
+  return { words, packages, all, config }
 }
 
 export function resolveCategory(name?: string) {
@@ -139,7 +155,7 @@ export function validateWord(word: string) {
   return operators.includes(key)
 }
 
-export function validate(data: AnalyzedPackage, word: string, users = getUsers(data)) {
+export function validate(data: AnalyzedPackage, word: string, config: ValidateConfig = {}) {
   const { locales, service } = data.manifest
   if (word.startsWith('impl:')) {
     return service.implements.includes(word.slice(5))
@@ -151,6 +167,7 @@ export function validate(data: AnalyzedPackage, word: string, users = getUsers(d
   } else if (word.startsWith('category:')) {
     return resolveCategory(data.category) === word.slice(9)
   } else if (word.startsWith('email:')) {
+    const users = config.users ?? getUsers(data)
     return users.some(({ email }) => email === word.slice(6))
   } else if (word.startsWith('updated:<')) {
     return data.updatedAt < word.slice(9)
@@ -164,11 +181,13 @@ export function validate(data: AnalyzedPackage, word: string, users = getUsers(d
     if (word === 'is:verified') return data.verified
     if (word === 'is:insecure') return data.insecure
     if (word === 'is:preview') return !!data.manifest.preview
+    if (word === 'is:installed') return !!config.isInstalled?.(data)
     return false
   } else if (word.startsWith('not:')) {
     if (word === 'not:verified') return !data.verified
     if (word === 'not:insecure') return !data.insecure
     if (word === 'not:preview') return !data.manifest.preview
+    if (word === 'not:installed') return !config.isInstalled?.(data)
     return true
   } else if (word.includes(':')) {
     return true

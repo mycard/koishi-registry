@@ -22,6 +22,7 @@
     </div>
     <template v-for="(item, key) in badges" :key="key">
       <div
+        v-if="!item.hidden?.(config ?? {}, 'filter')"
         class="market-filter-item"
         :class="{ [key]: true, active: words.includes(item.query), disabled: words.includes(item.negate) }"
         @click="toggleQuery(item, $event)">
@@ -29,7 +30,7 @@
         <span class="text">{{ item.text }}</span>
         <span class="spacer"></span>
         <span class="count" v-if="data">
-          {{ data.filter(x => validate(x, item.query)).length }}
+          {{ data.filter(x => validate(x, item.query, config)).length }}
         </span>
       </div>
     </template>
@@ -55,12 +56,13 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { Badge, badges, validate, comparators, categories, resolveCategory } from '../utils'
+import { Badge, badges, validate, comparators, categories, resolveCategory, MarketConfig } from '../utils'
 import { AnalyzedPackage } from '@koishijs/registry'
 import MarketIcon from '../icons'
 
 const props = defineProps<{
   modelValue: string[]
+  config?: MarketConfig
   data?: AnalyzedPackage[]
 }>()
 

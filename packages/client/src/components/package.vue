@@ -1,5 +1,5 @@
 <template>
-  <section class="k-card market-package">
+  <section class="market-package">
     <div class="header">
       <div class="left">
         <market-icon :name="'outline:' + resolveCategory(data.category)"></market-icon>
@@ -64,7 +64,7 @@
 
 import { computed } from 'vue'
 import { AnalyzedPackage } from '@koishijs/registry'
-import { badges, getUsers, resolveCategory, validate } from '@koishijs/client-market'
+import { MarketConfig, badges, getUsers, resolveCategory, validate } from '@koishijs/client-market'
 import MarketIcon from '../icons'
 import md5 from 'spark-md5'
 
@@ -72,12 +72,13 @@ defineEmits(['query'])
 
 const props = defineProps<{
   data: AnalyzedPackage
+  config?: MarketConfig
   gravatar?: string
 }>()
 
 const badge = computed(() => {
   for (const type in badges) {
-    if (badges[type].hidden) continue
+    if (badges[type].hidden?.(props.config ?? {}, 'card')) continue
     if (validate(props.data, badges[type].query)) return { type, ...badges[type] }
   }
 })
