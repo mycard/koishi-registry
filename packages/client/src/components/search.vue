@@ -4,6 +4,7 @@
       <span
         v-for="(word, index) in modelValue.slice(0, -1)"
         :key="index" class="search-word"
+        :class="{ invalid: !validateWord(word) }"
         @click="onClickWord(index)"
       >{{ word }}</span>
       <input
@@ -24,6 +25,7 @@
 <script lang="ts" setup>
 
 import { ref, watch } from 'vue'
+import { validateWord } from '../utils'
 import MarketIcon from '../icons'
 
 const props = defineProps<{
@@ -132,6 +134,16 @@ function onBackspace(event: KeyboardEvent) {
   background-color: var(--k-color-active);
   cursor: pointer;
   user-select: none;
+  transition: opacity 0.3s ease, background-color 0.3s ease;
+
+  &.invalid {
+    opacity: 0.5;
+    text-decoration: line-through;
+  }
+
+  &.invalid:hover {
+    opacity: 1;
+  }
 }
 
 </style>

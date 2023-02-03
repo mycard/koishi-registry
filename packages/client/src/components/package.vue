@@ -64,7 +64,7 @@
 
 import { computed } from 'vue'
 import { AnalyzedPackage } from '@koishijs/registry'
-import { badges, getUsers, resolveCategory } from '@koishijs/client-market'
+import { badges, getUsers, resolveCategory, validate } from '@koishijs/client-market'
 import MarketIcon from '../icons'
 import md5 from 'spark-md5'
 
@@ -77,7 +77,7 @@ const props = defineProps<{
 
 const badge = computed(() => {
   for (const type in badges) {
-    if (badges[type].check(props.data)) return { type, ...badges[type] }
+    if (validate(props.data, badges[type].query)) return { type, ...badges[type] }
   }
 })
 

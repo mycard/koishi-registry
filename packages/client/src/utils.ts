@@ -17,7 +17,6 @@ const aWeekAgo = new Date(Date.now() - 1000 * 3600 * 24 * 7).toISOString()
 
 export interface Badge {
   text: string
-  check(data: AnalyzedPackage): boolean
   query: string
   negate: string
   hidden?: boolean
@@ -26,25 +25,21 @@ export interface Badge {
 export const badges: Dict<Badge> = {
   verified: {
     text: '官方认证',
-    check: data => data.verified,
     query: 'is:verified',
     negate: 'not:verified',
   },
   insecure: {
     text: '不安全',
-    check: data => data.insecure,
     query: 'is:insecure',
     negate: 'not:insecure',
   },
   preview: {
     text: '开发中',
-    check: data => data.manifest.preview,
     query: 'is:preview',
     negate: 'not:preview',
   },
   newborn: {
     text: '近期新增',
-    check: data => data.createdAt >= aWeekAgo,
     query: `created:>${aWeekAgo}`,
     negate: `created:<${aWeekAgo}`,
   },
@@ -136,7 +131,15 @@ export function resolveCategory(name?: string) {
   return 'other'
 }
 
-export function validate(data: AnalyzedPackage, word: string, users: User[]) {
+const operators = ['is', 'not', 'created', 'updated', 'impl', 'locale', 'using', 'category', 'email', 'show', 'sort']
+
+export function validateWord(word: string) {
+  if (!word.includes(':')) return true
+  const [key] = word.split(':', 1)
+  return operators.includes(key)
+}
+
+export function validate(data: AnalyzedPackage, word: string, users = getUsers(data)) {
   const { locales, service } = data.manifest
   if (word.startsWith('impl:')) {
     return service.implements.includes(word.slice(5))

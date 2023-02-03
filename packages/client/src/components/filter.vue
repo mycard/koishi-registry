@@ -8,7 +8,7 @@
         v-if="!item.hidden"
         class="market-filter-item"
         :class="{ active: activeSort[0] === key }"
-        @click="toggleSort('sort:' + key)">
+        @click="toggleSort('sort:' + key, $event)">
         <span class="icon"><market-icon :name="item.icon"></market-icon></span>
         <span class="text">{{ item.text }}</span>
         <span class="spacer"></span>
@@ -25,12 +25,12 @@
         v-if="!item.hidden"
         class="market-filter-item"
         :class="{ [key]: true, active: words.includes(item.query), disabled: words.includes(item.negate) }"
-        @click="toggleQuery(item)">
+        @click="toggleQuery(item, $event)">
         <span class="icon"><market-icon :name="key"></market-icon></span>
         <span class="text">{{ item.text }}</span>
         <span class="spacer"></span>
         <span class="count" v-if="data">
-          {{ data.filter(x => item.check(x)).length }}
+          {{ data.filter(x => validate(x, item.query)).length }}
         </span>
       </div>
     </template>
@@ -42,7 +42,7 @@
     <div
       v-for="(title, key) in categories" :key="key" class="market-filter-item"
       :class="{ active: words.includes('category:' + key) }"
-      @click="toggleCategory('category:' + key)">
+      @click="toggleCategory('category:' + key, $event)">
       <span class="icon"><market-icon :name="'solid:' + key"></market-icon></span>
       <span class="text">{{ title }}</span>
       <span class="spacer"></span>
@@ -56,7 +56,7 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { Badge, badges, comparators, categories, resolveCategory, MarketIcon } from '..'
+import { Badge, badges, validate, comparators, categories, resolveCategory, MarketIcon } from '..'
 import { AnalyzedPackage } from '@koishijs/registry'
 
 const props = defineProps<{
@@ -96,7 +96,7 @@ function addWord(word: string) {
   words.value.push(word, '')
 }
 
-function toggleSort(word: string) {
+function toggleSort(word: string, event: MouseEvent) {
   const index = words.value.findIndex(x => x.startsWith('sort:'))
   if (index === -1) {
     if (word === 'sort:rating') {
@@ -113,7 +113,7 @@ function toggleSort(word: string) {
   }
 }
 
-function toggleCategory(word: string) {
+function toggleCategory(word: string, event: MouseEvent) {
   const index = words.value.findIndex(x => x.startsWith('category:'))
   if (index === -1) {
     addWord(word)
@@ -124,7 +124,7 @@ function toggleCategory(word: string) {
   }
 }
 
-function toggleQuery(item: Badge) {
+function toggleQuery(item: Badge, event: MouseEvent) {
   const { query, negate } = item
   const index = words.value.findIndex(x => x === query || x === negate)
   if (index === -1) {
