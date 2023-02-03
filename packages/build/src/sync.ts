@@ -275,7 +275,6 @@ class Synchronizer {
     await pMap(this.packages, async (item) => {
       const legacy = this.legacy[item.name]
       if (!this.shouldBundle(item.name)) {
-        console.log(item.name, legacy.object.rating)
         item.rating = item.object.rating = legacy.object.rating
         item.portable = item.object.package.portable = legacy.portable
         item.insecure = item.object.package.insecure = legacy.insecure

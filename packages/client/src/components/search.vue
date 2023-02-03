@@ -129,7 +129,7 @@ function onBackspace(event: KeyboardEvent) {
   font-weight: 500;
   white-space: nowrap;
   vertical-align: baseline;
-  background-color: var(--k-color-primary);
+  background-color: var(--k-color-active);
   cursor: pointer;
   user-select: none;
 }
