@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 1
+const version = 2
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -94,7 +94,7 @@ const evaluators: Record<Subjects, (item: AnalyzedPackage, object: SearchObject)
     } catch {}
     const actual = item.downloads?.lastMonth ?? 0
     const lifespan = minmax((Date.now() - +new Date(item.createdAt)) / Time.day, 7, 30)
-    const estimated = 250 * (30 - lifespan) / 23 + actual / lifespan * 30 * (lifespan - 7) / 23
+    const estimated = 200 * (30 - lifespan) / 23 + actual / lifespan * 30 * (lifespan - 7) / 23
     return softmax(estimated / 200)
   },
   async quality(item, object) {

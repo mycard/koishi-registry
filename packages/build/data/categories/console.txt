@@ -13,6 +13,7 @@ koishi-plugin-changelog
 koishi-plugin-click-colorful
 koishi-plugin-console-update-tips
 koishi-plugin-desktop
+koishi-plugin-editor-test
 koishi-plugin-envinfo
 koishi-plugin-footer
 koishi-plugin-migration

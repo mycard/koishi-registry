@@ -27,6 +27,7 @@ koishi-plugin-pengyouquan-word
 koishi-plugin-petpet
 koishi-plugin-petpet-plus
 koishi-plugin-phlogo
+koishi-plugin-plugin
 koishi-plugin-sad-word
 koishi-plugin-saohua-word
 koishi-plugin-shenhuifu-word
@@ -35,6 +36,7 @@ koishi-plugin-shunkouliu-word
 koishi-plugin-thesaurus
 koishi-plugin-tiangou-word
 koishi-plugin-today-word
+koishi-plugin-uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 koishi-plugin-wangyiyun-word
 koishi-plugin-wangzhe-word
 koishi-plugin-words

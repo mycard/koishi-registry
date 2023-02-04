@@ -7,6 +7,7 @@ koishi-plugin-currency
 koishi-plugin-currency-command
 koishi-plugin-eval
 koishi-plugin-eval-react-jsx
+koishi-plugin-eventbus
 koishi-plugin-express
 koishi-plugin-message-logger
 koishi-plugin-markdown

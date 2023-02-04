@@ -13,6 +13,7 @@ koishi-plugin-dice
 koishi-plugin-dicex
 koishi-plugin-draw
 koishi-plugin-dujitang-word
+koishi-plugin-edging
 koishi-plugin-favor
 koishi-plugin-fortune
 koishi-plugin-gamewallpaper-byripple
@@ -24,7 +25,10 @@ koishi-plugin-intimacy
 koishi-plugin-jrrp
 koishi-plugin-lottery
 koishi-plugin-marry
+koishi-plugin-mute-together
 koishi-plugin-plp
+koishi-plugin-pool-simulator
 koishi-plugin-puzzle
 koishi-plugin-repeater
 koishi-plugin-sleep-manage
+koishi-plugin-tarot-divination

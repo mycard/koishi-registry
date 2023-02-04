@@ -7,6 +7,7 @@
 koishi-plugin-60snews
 koishi-plugin-baidu
 koishi-plugin-bdynamic
+koishi-plugin-bgmlist
 koishi-plugin-bilibili
 koishi-plugin-bilibili-list
 koishi-plugin-blibli-list
@@ -28,6 +29,7 @@ koishi-plugin-mediawiki
 koishi-plugin-mikan
 koishi-plugin-moebgm
 koishi-plugin-moyu
+koishi-plugin-moyu2
 koishi-plugin-retweet-notifier
 koishi-plugin-rss
 koishi-plugin-rsshub

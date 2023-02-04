@@ -2,6 +2,7 @@
 @koishijs/plugin-recall
 @koishijs/plugin-sudo
 @koishijs/plugin-switch
+@myrtus/koishi-plugin-config-helper
 
 koishi-plugin-acs
 koishi-plugin-alertmanager
