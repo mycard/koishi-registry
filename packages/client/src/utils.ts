@@ -127,6 +127,7 @@ export function useMarket(market: () => AnalyzedPackage[], config: MarketConfig 
         const comparator = comparators[word.slice(5)]
         if (comparator) return comparator.compare(a, b) * order
       }
+      return comparators.rating.compare(a, b)
     })
   })
 

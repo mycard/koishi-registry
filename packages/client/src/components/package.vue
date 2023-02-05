@@ -14,7 +14,7 @@
           </el-tooltip>
         </h2>
         <div class="bottom">
-          <el-tooltip :content="(data.rating ?? 0).toFixed(1)" placement="right">
+          <el-tooltip :content="Math.max(Math.min(data.rating ?? 0, 5), 0).toFixed(1)" placement="right">
             <div class="rating">
               <market-icon v-for="(_, index) in Array(5).fill(null)" :key="index" :name="index + 0.5 < data.rating ? 'star-full' : 'star-empty'"></market-icon>
             </div>

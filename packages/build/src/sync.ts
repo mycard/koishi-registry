@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 2
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -303,7 +303,7 @@ class Synchronizer {
           item.score.detail[subject] = value
           item.score.final += weights[subject] * value
         }))
-        item.rating = item.object.rating = Math.min(Math.max((item.score.final - 0.3) * 10, 0), 5)
+        item.rating = item.object.rating = (item.score.final - 0.3) * 10
       }
 
       if (item.name in categories) {
