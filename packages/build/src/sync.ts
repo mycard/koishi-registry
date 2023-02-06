@@ -8,7 +8,7 @@ import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
 
-const version = 3
+const version = 4
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -262,12 +262,13 @@ class Synchronizer {
   }
 
   async bundleAll() {
-    for (const name of shared) {
+    for (const name in shared) {
+      console.log(name, this.latest[name])
       const current = this.latest[name]
       if (!this.shouldBundle(name)) {
         current.portable = this.legacy[name].portable
       } else {
-        const result = await this.bundle(name, current.version, true)
+        const result = await this.bundle(name, shared[name], true)
         current.portable = result.portable
       }
     }
@@ -341,7 +342,7 @@ class Synchronizer {
       }
     }
     for (const folder of folders) {
-      if (shared.includes(folder)) continue
+      if (folder in shared) continue
       if (this.packages.find(item => item.name === folder && item.portable)) continue
       await rm(outdir + '/modules/' + folder, { recursive: true, force: true })
     }

@@ -84,9 +84,9 @@ export async function bundle(name: string, verified = false) {
   const cwd = resolve(tempDir, name)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
-  const entry = locateEntry(meta) || meta.main
+  const entry = locateEntry(meta) || meta.main || 'index.js'
   const basedir = dirname(require.resolve(name + '/package.json'))
-  const external = new Set([...shared, ...Object.keys(meta.peerDependencies || {})])
+  const external = new Set([...Object.keys(shared), ...Object.keys(meta.peerDependencies || {})])
   const result = await build({
     entryPoints: [resolve(basedir, entry)],
     bundle: true,

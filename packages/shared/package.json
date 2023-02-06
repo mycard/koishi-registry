@@ -1,0 +1,14 @@
+{
+  "name": "@koishijs/shared-packages",
+  "version": "0.0.0",
+  "dependencies": {
+    "@koishijs/core": "4.11.5",
+    "@koishijs/helpers": "1.2.7",
+    "@koishijs/loader": "2.5.5",
+    "@satorijs/core": "2.1.1",
+    "axios": "1.3.2",
+    "koishi": "4.11.5",
+    "mime-db": "1.52.0",
+    "reggol": "1.3.5"
+  }
+}

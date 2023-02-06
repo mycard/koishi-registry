@@ -1,4 +1,4 @@
-import { compare, intersects, maxSatisfying } from 'semver'
+import { compare, intersects } from 'semver'
 import { Awaitable, defineProperty, Dict, pick, Time } from 'cosmokit'
 import { Ensure } from './utils'
 import pMap from 'p-map'
@@ -173,7 +173,7 @@ export interface AnalyzedPackage extends SearchPackage, Extension {
 export interface CollectConfig {
   step?: number
   timeout?: number
-  shared?: string[]
+  shared?: Dict<string>
   ignored?: string[]
   concurrency?: number
 }
@@ -262,7 +262,7 @@ export default class Scanner {
   }
 
   public async collect(config: CollectConfig = {}) {
-    const { step = 250, shared = [], ignored = [], concurrency = 5 } = config
+    const { step = 250, shared = {}, ignored = [], concurrency = 5 } = config
     this.objects = []
     this.time = new Date().toUTCString()
     const total = await this.search(0, config)
@@ -275,14 +275,14 @@ export default class Scanner {
       const community = /(^|\/)koishi-plugin-[0-9a-z-]+$/.test(name)
       return !object.ignored && !ignored.includes(name) && (official || community)
     })
-    this.shared = (await pMap(shared, async (name) => {
+    this.shared = (await pMap(Object.keys(shared), async (name) => {
       const registry = await this.request<Registry>(`/${name}`)
-      const version = maxSatisfying(Object.keys(registry.versions), '*')
-      if (!version) return
+      const version = shared[name]
+      if (!registry.versions[version]) return
       return {
         ...pick(registry, ['name', 'description']),
         version,
-        date: registry.time.modified,
+        date: registry.time[version],
         versions: pick(registry.versions, [version]),
       }
     }, { concurrency })).filter(isNonNullable)
