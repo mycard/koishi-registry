@@ -7,7 +7,6 @@ function loadData(path: string) {
   return content.split(/\r?\n/).filter(Boolean)
 }
 
-export const shared: Dict<string> = require('../../shared/package.json').dependencies
 export const ignored = loadData('ignored.txt')
 export const insecure = loadData('insecure.txt')
 export const verified = loadData('verified.txt')

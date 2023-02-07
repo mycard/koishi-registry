@@ -1,6 +1,9 @@
 {
   "name": "@koishijs/shared-packages",
   "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "typings": "index.d.ts",
   "dependencies": {
     "@koishijs/core": "4.11.5",
     "@koishijs/helpers": "1.2.7",
