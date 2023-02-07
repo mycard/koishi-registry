@@ -14,5 +14,6 @@ koishi-plugin-markdown
 koishi-plugin-money
 koishi-plugin-nonebot
 koishi-plugin-spawn
+koishi-plugin-x6
 koishi-plugin-xff
 koishi-plugin-xff2

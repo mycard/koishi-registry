@@ -107,16 +107,9 @@ export async function bundle(name: string, verified = false) {
       setup(build) {
         const escape = (text: string) => `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
         const filter = new RegExp([...external].map(escape).join('|'))
-        build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+        build.onResolve({ filter }, (args) => ({
           external: true,
           path: endpoint + '/modules/' + args.path + '/index.js',
-        }))
-        build.onResolve({ filter }, (args) => ({
-          path: args.path,
-          namespace: 'external',
-        }))
-        build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
-          contents: `export * from ${JSON.stringify(args.path)}`,
         }))
       },
     }],

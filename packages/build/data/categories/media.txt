@@ -5,6 +5,7 @@
 @yunkuangao/koishi-plugin-tianxing
 
 koishi-plugin-60snews
+koishi-plugin-bangumi
 koishi-plugin-baidu
 koishi-plugin-bdynamic
 koishi-plugin-bgmlist

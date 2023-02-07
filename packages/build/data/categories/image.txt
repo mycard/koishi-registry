@@ -8,6 +8,7 @@ koishi-plugin-autopic
 koishi-plugin-beauty-img
 koishi-plugin-dongmanbizhi-img
 koishi-plugin-image-search
+koishi-plugin-lyoimiya
 koishi-plugin-picapi
 koishi-plugin-pics
 koishi-plugin-picsource-localfs
@@ -18,5 +19,6 @@ koishi-plugin-picsource-twitter
 koishi-plugin-picsource-yande
 koishi-plugin-random-dog
 koishi-plugin-random-wallpaper
+koishi-plugin-sex-img
 koishi-plugin-todaybizhi-img
 koishi-plugin-twdne
