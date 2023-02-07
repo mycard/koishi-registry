@@ -39,7 +39,7 @@ const words = ref<string[]>()
 
 watch(() => props.modelValue, (value) => {
   words.value = value.slice()
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 function onClickWord(index: number) {
   words.value.splice(index, 1)

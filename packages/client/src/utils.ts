@@ -140,7 +140,11 @@ export function useMarket(market: () => AnalyzedPackage[], config: MarketConfig 
     })
   })
 
-  return { words, packages, all, config }
+  const hasFilter = computed(() => {
+    return words.value.filter(w => w && !w.startsWith('show:') && !w.startsWith('sort:')).length > 0
+  })
+
+  return { words, hasFilter, packages, all, config }
 }
 
 export function resolveCategory(name?: string) {

@@ -72,7 +72,7 @@ const words = ref<string[]>()
 
 watch(() => props.modelValue, (value) => {
   words.value = value.slice()
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 const activeSort = computed<string[]>(() => {
   let word = words.value.find(w => w.startsWith('sort:'))
