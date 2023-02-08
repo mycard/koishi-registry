@@ -9,7 +9,7 @@
       >{{ word }}</span>
       <input
         :placeholder="placeholder || '输入想要查询的插件名'"
-        v-model="words[words.length - 1]"
+        v-model="lastWord"
         @blur="onEnter"
         @keydown.escape="onEscape"
         @keydown.backspace="onBackspace"
@@ -24,7 +24,7 @@
 
 <script lang="ts" setup>
 
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { validateWord } from '../utils'
 import MarketIcon from '../icons'
 
@@ -40,6 +40,14 @@ const words = ref<string[]>()
 watch(() => props.modelValue, (value) => {
   words.value = value.slice()
 }, { immediate: true, deep: true })
+
+const lastWord = computed({
+  get: () => words.value[words.value.length - 1],
+  set: (value) => {
+    words.value[words.value.length - 1] = value
+    emit('update:modelValue', words.value)
+  },
+})
 
 function onClickWord(index: number) {
   words.value.splice(index, 1)

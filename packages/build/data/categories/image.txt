@@ -14,6 +14,7 @@ koishi-plugin-pics
 koishi-plugin-picsource-localfs
 koishi-plugin-picsource-lolicon
 koishi-plugin-picsource-miraikoi
+koishi-plugin-picsource-nyan
 koishi-plugin-picsource-sina
 koishi-plugin-picsource-twitter
 koishi-plugin-picsource-yande

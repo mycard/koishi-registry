@@ -1,12 +1,12 @@
 <template>
-  <section class="market-package">
+  <section class="market-package" :class="{ 'has-link': homepage }" @click="openLink(homepage)">
     <div class="header">
       <div class="left">
         <market-icon :name="'outline:' + resolveCategory(data.category)"></market-icon>
       </div>
       <div class="main">
         <h2 class="top">
-          <a :href="data.links.homepage || data.links.repository" target="_blank" rel="noopener noreferrer">{{ data.shortname }}</a>
+          <span>{{ data.shortname }}</span>
           <el-tooltip v-if="badge" placement="right" :content="badge.text">
             <span :class="['icon', badge.type]" @click="$emit('query', badge.query)">
               <market-icon :name="badge.type"></market-icon>
@@ -76,6 +76,13 @@ const props = defineProps<{
   gravatar?: string
 }>()
 
+const homepage = computed(() => props.data.links.homepage || props.data.links.repository)
+
+function openLink(url: string) {
+  if (!url) return
+  window.open(url, '_blank', 'noopener noreferrer')
+}
+
 const badge = computed(() => {
   for (const type in badges) {
     if (badges[type].hidden?.(props.config ?? {}, 'card')) continue
@@ -118,6 +125,10 @@ function formatSize(value: number) {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+
+  &.has-link {
+    cursor: pointer;
+  }
 
   .market-icon {
     height: 1em;

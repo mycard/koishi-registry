@@ -41,6 +41,7 @@ koishi-plugin-shadowban
 koishi-plugin-shorturl
 koishi-plugin-shuijishu
 koishi-plugin-spawn-handwrite-img
+koishi-plugin-subscribe-at
 koishi-plugin-tex
 koishi-plugin-tianyi-drive-cracker
 koishi-plugin-translator-baidu
