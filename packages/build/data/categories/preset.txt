@@ -1,4 +1,3 @@
-@koishijs/plugin-verifier
 @myrtus/koishi-plugin-forward
 
 koishi-plugin-act
@@ -28,3 +27,4 @@ koishi-plugin-rr-welcome
 koishi-plugin-scene-training
 koishi-plugin-simple-welcome
 koishi-plugin-spammer
+koishi-plugin-verifier

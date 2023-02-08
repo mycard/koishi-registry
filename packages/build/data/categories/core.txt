@@ -8,8 +8,8 @@
 @koishijs/plugin-locales
 @koishijs/plugin-mock
 @koishijs/plugin-rate-limit
-@koishijs/plugin-schedule
 
 koishi-plugin-cron
 koishi-plugin-messages
 koishi-plugin-puppeteer
+koishi-plugin-schedule

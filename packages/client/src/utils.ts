@@ -199,5 +199,8 @@ export function validate(data: AnalyzedPackage, word: string, config: ValidateCo
   }
 
   if (data.shortname.includes(word)) return true
-  return data.keywords.some(keyword => keyword.includes(word))
+  return [
+    ...data.keywords,
+    ...Object.values(data.manifest.description),
+  ].some(keyword => keyword.includes(word))
 }
