@@ -1,5 +1,6 @@
 import Asc from './asc.vue'
 import Balance from './balance.vue'
+import Close from './close.vue'
 import Desc from './desc.vue'
 import Download from './download.vue'
 import FileArchive from './file-archive.vue'
@@ -18,6 +19,7 @@ import Verified from './verified.vue'
 export default {
   'asc': Asc,
   'balance': Balance,
+  'close': Close,
   'desc': Desc,
   'download': Download,
   'file-archive': FileArchive,

@@ -6,7 +6,7 @@
       </div>
       <div class="main">
         <h2 class="top">
-          <span>{{ data.shortname }}</span>
+          <span class="title">{{ data.shortname }}</span>
           <el-tooltip v-if="badge" placement="right" :content="badge.text">
             <span :class="['icon', badge.type]" @click="$emit('query', badge.query)">
               <market-icon :name="badge.type"></market-icon>
@@ -27,14 +27,14 @@
     </div>
     <k-markdown inline class="desc" :source="data.manifest.description.zh || data.manifest.description.en"></k-markdown>
     <div class="footer">
-      <a class="shrink" :href="data.links.npm" target="_blank" rel="noopener noreferrer">
+      <span class="shrink" :class="{ 'has-link': data.links.npm }" @click.stop="openLink(data.links.npm)">
         <market-icon name="tag"></market-icon>{{ data.version }}
-      </a>
+      </span>
       <template v-if="data.installSize">
         <span class="spacer"></span>
-        <a :href="data.links.size" target="_blank" rel="noopener noreferrer">
+        <span :class="{ 'has-link': data.links.size }" @click.stop="openLink(data.links.size)">
           <market-icon name="file-archive"></market-icon>{{ formatSize(data.installSize) }}
-        </a>
+        </span>
       </template>
       <template v-if="data.downloads">
         <span class="spacer"></span>
@@ -51,9 +51,9 @@
       <span class="spacer grow"></span>
       <div class="avatars">
         <el-tooltip v-for="({ email, name }) in getUsers(data)" :key="name" :content="name">
-          <a @click="$emit('query', 'email:' + email)">
+          <span class="avatar" @click="$emit('query', 'email:' + email)">
             <img :src="getAvatar(email)">
-          </a>
+          </span>
         </el-tooltip>
       </div>
     </div>
@@ -115,6 +115,10 @@ function formatSize(value: number) {
 
 <style lang="scss" scoped>
 
+.has-link {
+  cursor: pointer;
+}
+
 .market-package {
   width: 100%;
   max-width: 540px;
@@ -125,10 +129,6 @@ function formatSize(value: number) {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-
-  &.has-link {
-    cursor: pointer;
-  }
 
   .market-icon {
     height: 1em;
@@ -174,7 +174,7 @@ function formatSize(value: number) {
       display: flex;
       align-items: center;
 
-      a {
+      .title {
         flex: 0 1 auto;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -299,7 +299,7 @@ function formatSize(value: number) {
       display: flex;
       gap: 0.25rem;
 
-      a {
+      .avatar {
         cursor: pointer;
       }
 

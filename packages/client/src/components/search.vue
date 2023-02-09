@@ -16,8 +16,9 @@
         @keypress.enter.prevent="onEnter"
         @keypress.space.prevent="onEnter"/>
     </div>
-    <div class="search-action">
-      <market-icon name="search"></market-icon>
+    <div class="search-action" @click.stop="onClear">
+      <market-icon class="search" name="search"></market-icon>
+      <market-icon class="close" name="close"></market-icon>
     </div>
   </div>
 </template>
@@ -77,6 +78,11 @@ function onBackspace(event: KeyboardEvent) {
   }
 }
 
+function onClear() {
+  words.value = ['']
+  emit('update:modelValue', words.value)
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -116,13 +122,24 @@ function onBackspace(event: KeyboardEvent) {
 .search-action {
   flex: 0 0 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 3rem;
+  height: 2.5rem;
+  cursor: pointer;
 
   .market-icon {
     height: 1rem;
     opacity: 0.5;
+  }
+
+  &:hover .market-icon.search {
+    display: none;
+  }
+
+  &:not(:hover) .market-icon.close {
+    display: none;
   }
 }
 
