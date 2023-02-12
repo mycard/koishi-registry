@@ -32,4 +32,5 @@ koishi-plugin-puzzle
 koishi-plugin-repeater
 koishi-plugin-russian-roulette
 koishi-plugin-sleep-manage
+koishi-plugin-tarot
 koishi-plugin-tarot-divination

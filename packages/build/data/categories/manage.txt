@@ -1,13 +1,12 @@
 @koishijs/plugin-feedback
 @koishijs/plugin-recall
-@koishijs/plugin-sudo
-@koishijs/plugin-switch
 @myrtus/koishi-plugin-config-helper
 
 koishi-plugin-acs
 koishi-plugin-alertmanager
 koishi-plugin-aliyun-censor
 koishi-plugin-autokick
+koishi-plugin-autowithdraw
 koishi-plugin-blacklist
 koishi-plugin-blame
 koishi-plugin-chinfo
@@ -19,4 +18,6 @@ koishi-plugin-qqgroup-manager
 koishi-plugin-rr-image-censor
 koishi-plugin-sentry
 koishi-plugin-shutdown
+koishi-plugin-sudo
+koishi-plugin-switch
 koishi-plugin-text-censor

@@ -2,6 +2,8 @@
 
 koishi-plugin-ai-qa
 koishi-plugin-chatgpt
+koishi-plugin-chatgpt-api
+koishi-plugin-crossdressing-detect
 koishi-plugin-davinci-003
 koishi-plugin-deep-danbooru
 koishi-plugin-diffsinger-huggingface
@@ -12,6 +14,7 @@ koishi-plugin-hlai-painter
 koishi-plugin-mollyai
 koishi-plugin-novel-ai-api
 koishi-plugin-novelai
+koishi-plugin-openai-chatbot
 koishi-plugin-openchat
 koishi-plugin-qingyunke-free
 koishi-plugin-rasa-nlg-dict

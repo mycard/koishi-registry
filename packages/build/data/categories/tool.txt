@@ -32,6 +32,7 @@ koishi-plugin-pointfree
 koishi-plugin-poj-1
 koishi-plugin-pterodactyl
 koishi-plugin-qrcode
+koishi-plugin-random-num
 koishi-plugin-random-number
 koishi-plugin-railgun
 koishi-plugin-realtime-vote
@@ -39,6 +40,7 @@ koishi-plugin-rr-translator
 koishi-plugin-screenshot
 koishi-plugin-shadowban
 koishi-plugin-shorturl
+koishi-plugin-showtime
 koishi-plugin-shuijishu
 koishi-plugin-spawn-handwrite-img
 koishi-plugin-subscribe-at
@@ -47,6 +49,7 @@ koishi-plugin-tianyi-drive-cracker
 koishi-plugin-translator-baidu
 koishi-plugin-translator-bing
 koishi-plugin-translator-youdao
+koishi-plugin-xkt
 koishi-plugin-who-at-me
 koishi-plugin-whois
 koishi-plugin-whoviews

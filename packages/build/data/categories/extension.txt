@@ -9,10 +9,12 @@ koishi-plugin-eval
 koishi-plugin-eval-react-jsx
 koishi-plugin-eventbus
 koishi-plugin-express
+koishi-plugin-imagify
 koishi-plugin-message-logger
 koishi-plugin-markdown
 koishi-plugin-money
 koishi-plugin-nonebot
+koishi-plugin-send-as-image
 koishi-plugin-spawn
 koishi-plugin-x6
 koishi-plugin-xff
