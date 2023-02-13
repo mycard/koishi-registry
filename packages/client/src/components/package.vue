@@ -1,5 +1,5 @@
 <template>
-  <section class="market-package" :class="{ 'has-link': homepage }" @click="openLink(homepage)">
+  <section class="market-package" :class="{ 'has-link': homepage }" @click="openLink(homepage, $event)">
     <div class="header">
       <div class="left">
         <market-icon :name="'outline:' + resolveCategory(data.category)"></market-icon>
@@ -27,12 +27,12 @@
     </div>
     <k-markdown inline class="desc" :source="data.manifest.description.zh || data.manifest.description.en"></k-markdown>
     <div class="footer">
-      <span class="shrink" :class="{ 'has-link': data.links.npm }" @click.stop="openLink(data.links.npm)">
+      <span class="shrink" :class="{ 'has-link': data.links.npm }" @click.stop="openLink(data.links.npm, $event)">
         <market-icon name="tag"></market-icon>{{ data.version }}
       </span>
       <template v-if="data.installSize">
         <span class="spacer"></span>
-        <span :class="{ 'has-link': data.links.size }" @click.stop="openLink(data.links.size)">
+        <span :class="{ 'has-link': data.links.size }" @click.stop="openLink(data.links.size, $event)">
           <market-icon name="file-archive"></market-icon>{{ formatSize(data.installSize) }}
         </span>
       </template>
@@ -78,8 +78,9 @@ const props = defineProps<{
 
 const homepage = computed(() => props.data.links.homepage || props.data.links.repository)
 
-function openLink(url: string) {
+function openLink(url: string, event: MouseEvent) {
   if (!url) return
+  if ((event.target as Element).tagName === 'A') return
   window.open(url, '_blank', 'noopener noreferrer')
 }
 
