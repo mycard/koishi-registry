@@ -91,7 +91,7 @@ export async function bundle(name: string, verified = false) {
   const result = await build({
     entryPoints: [resolve(basedir, entry)],
     bundle: true,
-    minify: true,
+    minify: require.main !== module,
     drop: ['console', 'debugger'],
     write: false,
     charset: 'utf8',

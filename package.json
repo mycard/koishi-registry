@@ -7,9 +7,8 @@
   ],
   "scripts": {
     "build": "tsc -b packages/core",
-    "bundle": "node -r esbuild-register -r yml-register packages/build/src/bundle.ts",
-    "play": "node -r esbuild-register -r yml-register packages/build/src/play.ts",
-    "sync": "node -r esbuild-register -r yml-register packages/build/src/sync.ts"
+    "bundle": "node -r esbuild-register -r yml-register packages/scripts/src/bundle.ts",
+    "sync": "node -r esbuild-register -r yml-register packages/scripts/src/sync.ts"
   },
   "devDependencies": {
     "@types/node": "^18.11.17",
