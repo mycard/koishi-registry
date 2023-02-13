@@ -172,6 +172,7 @@ export interface AnalyzedPackage extends SearchPackage, Extension {
 
 export interface CollectConfig {
   step?: number
+  margin?: number
   timeout?: number
   shared?: Dict<string>
   ignored?: string[]
@@ -250,6 +251,8 @@ export default interface Scanner extends SearchResult {
 }
 
 export default class Scanner {
+  private cache: Dict<SearchObject> = {}
+
   constructor(public request: <T>(url: string, config?: RequestConfig) => Promise<T>) {
     defineProperty(this, 'progress', 0)
   }
@@ -257,19 +260,21 @@ export default class Scanner {
   private async search(offset: number, config: CollectConfig) {
     const { step = 250, timeout = Time.second * 30 } = config
     const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=${step}&from=${offset}`, { timeout })
-    this.objects.push(...result.objects)
+    for (const object of result.objects) {
+      this.cache[object.package.name] = object
+    }
     return result.total
   }
 
   public async collect(config: CollectConfig = {}) {
-    const { step = 250, shared = {}, ignored = [], concurrency = 5 } = config
-    this.objects = []
+    const { step = 250, margin = 10, shared = {}, ignored = [], concurrency = 5 } = config
+    this.cache = {}
     this.time = new Date().toUTCString()
     const total = await this.search(0, config)
-    for (let offset = this.objects.length; offset < total; offset += step) {
-      await this.search(offset, config)
+    for (let offset = Object.values(this.cache).length; offset < total; offset += step - margin) {
+      await this.search(offset - margin, config)
     }
-    this.objects = this.objects.filter((object) => {
+    this.objects = Object.values(this.cache).filter((object) => {
       const { name } = object.package
       const official = /^@koishijs\/plugin-[0-9a-z-]+$/.test(name)
       const community = /(^|\/)koishi-plugin-[0-9a-z-]+$/.test(name)

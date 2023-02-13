@@ -2,7 +2,7 @@ import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } fr
 import { bundle, check, locateEntry, prepare } from './bundle'
 import { categories, ignored, verified } from './utils'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
-import { defineProperty, Dict, Time } from 'cosmokit'
+import { defineProperty, Dict, pick, Time } from 'cosmokit'
 import { resolve } from 'path'
 import shared from '@koishijs/shared-packages'
 import kleur from 'kleur'
@@ -313,21 +313,35 @@ class Synchronizer {
         this.uncategorized.push(item.name)
       }
 
-      // we don't need version details
+      // take only the latest version for Koishi Play
+      item.versions = {
+        [item.version]: pick(item.versions[item.version], ['peerDependencies', 'peerDependenciesMeta']),
+      }
+
       delete item.description
       delete item.author
-      delete item.versions
       delete item.score.detail
-    }, { concurrency: 5 })
+    }, { concurrency: 10 })
   }
 
   async generate() {
+    const timestamp = Date.now()
     this.scanner.version = version
     await writeFile(resolve(outdir, 'index.json'), JSON.stringify(this.scanner))
 
+    await writeFile(resolve(outdir, 'play.json'), JSON.stringify({
+      timestamp,
+      objects: this.packages.filter(item => item.portable),
+    }))
+
+    // we don't need version details
+    for (const item of this.packages) {
+      delete item.versions
+    }
+
     this.packages.sort((a, b) => b.score.final - a.score.final)
-    const content = JSON.stringify({ timestamp: Date.now(), objects: this.packages })
-    await writeFile(resolve(outdir, 'market.json'), content)
+    const market = JSON.stringify({ timestamp, objects: this.packages })
+    await writeFile(resolve(outdir, 'market.json'), market)
 
     this.uncategorized.sort()
     await writeFile(resolve(outdir, 'uncategorized.txt'), this.uncategorized.join('\n'))
