@@ -92,6 +92,7 @@ export async function bundle(name: string, verified = false) {
     entryPoints: [resolve(basedir, entry)],
     bundle: true,
     minify: true,
+    drop: ['console', 'debugger'],
     write: false,
     charset: 'utf8',
     platform: 'browser',
@@ -108,9 +109,19 @@ export async function bundle(name: string, verified = false) {
       setup(build) {
         const escape = (text: string) => `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
         const filter = new RegExp([...external].map(escape).join('|'))
-        build.onResolve({ filter }, (args) => ({
+        build.onResolve({ filter }, (args) => args.kind === 'require-call' ? ({
+          path: args.path,
+          namespace: 'external',
+        }) : ({
           external: true,
           path: endpoint + '/modules/' + args.path + '/index.js',
+        }))
+        build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+          external: true,
+          path: endpoint + '/modules/' + args.path + '/index.js',
+        }))
+        build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+          contents: `export * from ${JSON.stringify(args.path)}`,
         }))
       },
     }],
