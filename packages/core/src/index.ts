@@ -147,7 +147,6 @@ export interface SearchResult {
   total: number
   time: string
   objects: SearchObject[]
-  shared?: SharedPackage[]
   version?: number
 }
 
@@ -174,9 +173,7 @@ export interface CollectConfig {
   step?: number
   margin?: number
   timeout?: number
-  shared?: Dict<string>
   ignored?: string[]
-  concurrency?: number
 }
 
 export interface AnalyzeConfig {
@@ -267,7 +264,7 @@ export default class Scanner {
   }
 
   public async collect(config: CollectConfig = {}) {
-    const { step = 250, margin = 10, shared = {}, ignored = [], concurrency = 5 } = config
+    const { step = 250, margin = 10, ignored = [] } = config
     this.cache = {}
     this.time = new Date().toUTCString()
     const total = await this.search(0, config)
@@ -280,17 +277,6 @@ export default class Scanner {
       const community = /(^|\/)koishi-plugin-[0-9a-z-]+$/.test(name)
       return !object.ignored && !ignored.includes(name) && (official || community)
     })
-    this.shared = (await pMap(Object.keys(shared), async (name) => {
-      const registry = await this.request<Registry>(`/${name}`)
-      const version = shared[name]
-      if (!registry.versions[version]) return
-      return {
-        ...pick(registry, ['name', 'description']),
-        version,
-        date: registry.time[version],
-        versions: pick(registry.versions, [version]),
-      }
-    }, { concurrency })).filter(isNonNullable)
     this.total = this.objects.length
   }
 

@@ -1,13 +1,20 @@
-import Scanner, { AnalyzedPackage, DatedPackage, SearchObject, SearchResult } from '@koishijs/registry'
+import Scanner, { AnalyzedPackage, DatedPackage, Registry, SearchObject, SearchResult } from '@koishijs/registry'
 import { bundle, check, locateEntry, prepare } from './bundle'
 import { categories, ignored, verified } from './utils'
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { defineProperty, Dict, pick, Time } from 'cosmokit'
+import { maxSatisfying } from 'semver'
 import { resolve } from 'path'
 import shared from '@koishijs/shared-packages'
 import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
+
+declare module '@koishijs/registry' {
+  export interface SearchResult {
+    shared?: SharedPackage[]
+  }
+}
 
 const version = 4
 
@@ -172,10 +179,20 @@ class Synchronizer {
   }
 
   async checkAll() {
-    const [legacy] = await Promise.all([
-      getLegacy(outdir),
-      this.scanner.collect({ shared, ignored }),
-    ])
+    const legacy = await getLegacy(outdir)
+
+    await this.scanner.collect({ ignored })
+    this.scanner.shared = (await pMap(Object.keys(shared), async (name) => {
+      const registry = await this.scanner.request<Registry>(`/${name}`)
+      const version = maxSatisfying(Object.keys(registry.versions), shared[name])
+      if (!version) return
+      return {
+        ...pick(registry, ['name', 'description']),
+        version,
+        date: registry.time[version],
+        versions: pick(registry.versions, [version]),
+      }
+    }, { concurrency: 5 })).filter(Boolean)
 
     this.latest = makeDict(this.scanner)
     this.legacy = makeDict(legacy)
@@ -318,6 +335,8 @@ class Synchronizer {
         [item.version]: pick(item.versions[item.version], ['peerDependencies', 'peerDependenciesMeta']),
       }
 
+      delete item.manifest.browser
+      delete item.manifest.category
       delete item.description
       delete item.author
       delete item.score.detail
