@@ -248,10 +248,11 @@ export default interface Scanner extends SearchResult {
 }
 
 export default class Scanner {
-  private cache: Dict<SearchObject> = {}
+  private cache: Dict<SearchObject>
 
   constructor(public request: <T>(url: string, config?: RequestConfig) => Promise<T>) {
     defineProperty(this, 'progress', 0)
+    defineProperty(this, 'cache', {})
   }
 
   private async search(offset: number, config: CollectConfig) {
