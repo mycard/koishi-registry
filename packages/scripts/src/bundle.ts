@@ -28,10 +28,6 @@ export async function prepare(name: string, version: string) {
     dependencies: {
       [name]: version,
     },
-    browser: {
-      path: false,
-      fs: false,
-    },
   }))
 
   const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps'], { cwd })
