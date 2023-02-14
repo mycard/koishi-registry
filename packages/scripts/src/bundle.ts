@@ -157,12 +157,8 @@ export async function bundle(name: string, verified = false) {
   if (meta.peerDependencies?.['@koishijs/plugin-console']) {
     for (const name of redirects) {
       const filename = resolve(outdir, name)
-      await writeFile(filename, `export * from "${endpoint}/modules/@koishijs/plugin-console/dist/${name}";\n`)
+      await writeFile(filename, `export * from "https://play.koishi.chat/${name}";\n`)
     }
-  }
-
-  if (name === '@koishijs/plugin-console') {
-    console.log('::set-output name=playground::true')
   }
 }
 
