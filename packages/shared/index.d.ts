@@ -1,4 +1,4 @@
 import { Dict } from 'cosmokit'
 
-declare const dependencies: Dict<string>
-export = dependencies
+export const dependencies: Dict<string>
+export const vendors: Dict<string>

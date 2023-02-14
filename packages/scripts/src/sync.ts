@@ -5,7 +5,7 @@ import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { defineProperty, Dict, pick, Time } from 'cosmokit'
 import { maxSatisfying } from 'semver'
 import { resolve } from 'path'
-import shared from '@koishijs/shared-packages'
+import { dependencies } from '@koishijs/shared-packages'
 import kleur from 'kleur'
 import axios from 'axios'
 import pMap from 'p-map'
@@ -182,9 +182,9 @@ class Synchronizer {
     const legacy = await getLegacy(outdir)
 
     await this.scanner.collect({ ignored })
-    this.scanner.shared = (await pMap(Object.keys(shared), async (name) => {
+    this.scanner.shared = (await pMap(Object.keys(dependencies), async (name) => {
       const registry = await this.scanner.request<Registry>(`/${name}`)
-      const version = maxSatisfying(Object.keys(registry.versions), shared[name])
+      const version = maxSatisfying(Object.keys(registry.versions), dependencies[name])
       if (!version) return
       return {
         ...pick(registry, ['name', 'description']),
@@ -280,12 +280,12 @@ class Synchronizer {
   }
 
   async bundleAll() {
-    for (const name in shared) {
+    for (const name in dependencies) {
       const current = this.latest[name]
       if (!this.shouldBundle(name)) {
         current.portable = this.legacy[name].portable
       } else {
-        const result = await this.bundle(name, shared[name], true)
+        const result = await this.bundle(name, dependencies[name], true)
         current.portable = result.portable
       }
     }
@@ -375,7 +375,7 @@ class Synchronizer {
       }
     }
     for (const folder of folders) {
-      if (folder in shared) continue
+      if (folder in dependencies) continue
       if (this.packages.find(item => item.name === folder && item.portable)) continue
       await rm(outdir + '/modules/' + folder, { recursive: true, force: true })
     }
