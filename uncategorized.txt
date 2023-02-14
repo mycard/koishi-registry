@@ -1,0 +1,5 @@
+koishi-plugin-ao
+koishi-plugin-ha
+koishi-plugin-wordle
+koishi-plugin-zelda-tears-of-kngdom-reminder
+koishi-plugin-ziyong
