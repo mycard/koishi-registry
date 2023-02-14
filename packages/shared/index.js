@@ -1,3 +1,5 @@
+const { join } = require('path')
+
 const dependencies = {}
 const vendors = {}
 
@@ -15,4 +17,5 @@ for (const [name, request] of Object.entries(require('./package.json').dependenc
 module.exports = {
   dependencies,
   vendors,
+  inject: [join(__dirname, 'globals.js')],
 }

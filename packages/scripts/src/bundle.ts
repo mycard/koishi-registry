@@ -5,7 +5,7 @@ import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
 import { insecure } from './utils'
-import { vendors } from '@koishijs/shared-packages'
+import { inject, vendors } from '@koishijs/shared-packages'
 import parse from 'yargs-parser'
 import globby from 'globby'
 
@@ -108,6 +108,7 @@ export async function bundle(name: string, verified = false) {
       'process.env.KOISHI_REGISTRY': JSON.stringify(endpoint),
       'process.env.KOISHI_BASE': JSON.stringify(endpoint + '/modules/' + name),
     },
+    inject,
     plugins: [{
       name: 'external',
       setup(build) {
