@@ -190,7 +190,7 @@ class Synchronizer {
         ...pick(registry, ['name', 'description']),
         version,
         date: registry.time[version],
-        versions: pick(registry.versions, [version]),
+        versions: {},
       }
     }, { concurrency: 5 })).filter(Boolean)
 
@@ -340,6 +340,7 @@ class Synchronizer {
       delete item.description
       delete item.author
       delete item.score.detail
+      delete item.object.searchScore
     }, { concurrency: 10 })
   }
 

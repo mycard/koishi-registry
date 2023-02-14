@@ -19,6 +19,7 @@ jobs:
         with:
           ref: dist
           path: dist
+          repository: koishijs/registry-deploy
 
       - name: Set up Node
         uses: actions/setup-node@v3

@@ -5,7 +5,7 @@ import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
 import { insecure } from './utils'
-import shared from '@koishijs/shared-packages'
+import { vendors } from '@koishijs/shared-packages'
 import parse from 'yargs-parser'
 import globby from 'globby'
 
@@ -50,7 +50,7 @@ export function locateEntry(meta: Partial<PackageJson>) {
       if (typeof result === 'string') return result
     }
   }
-  return meta.module
+  return meta.browser || meta.module
 }
 
 const redirects = [
@@ -81,13 +81,17 @@ async function traverse(cwd: string) {
   }
 }
 
+function resolveVendor(name: string) {
+  return endpoint + '/modules/' + (vendors[name] ?? name) + '/index.js'
+}
+
 export async function bundle(name: string, verified = false) {
   const cwd = resolve(tempDir, name)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
   const entry = locateEntry(meta) || meta.main || 'index.js'
   const basedir = dirname(require.resolve(name + '/package.json'))
-  const external = new Set([...Object.keys(shared), ...Object.keys(meta.peerDependencies || {})])
+  const external = new Set([...Object.keys(vendors), ...Object.keys(meta.peerDependencies || {})])
   const result = await build({
     entryPoints: [resolve(basedir, entry)],
     bundle: true,
@@ -114,11 +118,11 @@ export async function bundle(name: string, verified = false) {
           namespace: 'external',
         }) : ({
           external: true,
-          path: endpoint + '/modules/' + args.path + '/index.js',
+          path: resolveVendor(args.path),
         }))
         build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
           external: true,
-          path: endpoint + '/modules/' + args.path + '/index.js',
+          path: resolveVendor(args.path),
         }))
         build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
           contents: `export * from ${JSON.stringify(args.path)}`,
