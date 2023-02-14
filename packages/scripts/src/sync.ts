@@ -16,7 +16,7 @@ declare module '@koishijs/registry' {
   }
 }
 
-const version = 3
+const version = 1
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })

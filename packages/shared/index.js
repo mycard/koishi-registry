@@ -14,8 +14,25 @@ for (const [name, request] of Object.entries(require('./package.json').dependenc
   }
 }
 
+const globals = ['buffer', 'process']
+const commonjs = [
+  'assert',
+  'buffer',
+  'constants',
+  'crypto',
+  'events',
+  'filer',
+  'path',
+  'process',
+  'stream',
+  'util',
+  'zlib',
+]
+
 module.exports = {
   dependencies,
   vendors,
-  inject: [join(__dirname, 'globals.js')],
+  globals,
+  commonjs,
+  injects: [join(__dirname, 'globals.js')],
 }

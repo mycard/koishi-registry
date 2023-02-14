@@ -5,7 +5,7 @@ import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
 import { insecure } from './utils'
-import { inject, vendors } from '@koishijs/shared-packages'
+import { commonjs, globals, injects, vendors } from '@koishijs/shared-packages'
 import parse from 'yargs-parser'
 import globby from 'globby'
 
@@ -50,7 +50,8 @@ export function locateEntry(meta: Partial<PackageJson>) {
       if (typeof result === 'string') return result
     }
   }
-  return meta.browser || meta.module
+  if (typeof meta.browser === 'string' && !['filer'].includes(meta.name)) return meta.browser
+  return meta.module
 }
 
 const redirects = [
@@ -104,11 +105,12 @@ export async function bundle(name: string, verified = false) {
     format: 'esm',
     logLevel: 'silent',
     define: {
+      'global': 'globalThis',
       'process.env.KOISHI_ENV': JSON.stringify('browser'),
       'process.env.KOISHI_REGISTRY': JSON.stringify(endpoint),
       'process.env.KOISHI_BASE': JSON.stringify(endpoint + '/modules/' + name),
     },
-    inject,
+    inject: globals.includes(name) ? [] : injects,
     plugins: [{
       name: 'external',
       setup(build) {
@@ -126,7 +128,9 @@ export async function bundle(name: string, verified = false) {
           path: resolveVendor(args.path),
         }))
         build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
-          contents: `export * from ${JSON.stringify(args.path)}`,
+          contents: commonjs.includes(args.path)
+            ? `import mod from ${JSON.stringify(args.path)}; export default mod;`
+            : `export * from ${JSON.stringify(args.path)};`,
         }))
       },
     }],
