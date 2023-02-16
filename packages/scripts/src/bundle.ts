@@ -5,7 +5,7 @@ import { dirname, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
 import { insecure } from './utils'
-import { commonjs, globals, injects, vendors } from '@koishijs/shared-packages'
+import { commonjs, fields, globals, injects, vendors } from '@koishijs/shared-packages'
 import parse from 'yargs-parser'
 import globby from 'globby'
 
@@ -23,7 +23,10 @@ export async function prepare(name: string, version: string) {
   const cwd = resolve(tempDir, name)
   await rm(cwd, { recursive: true, force: true })
   await mkdir(cwd, { recursive: true })
-  await writeFile(cwd + '/index.js', '')
+  await writeFile(cwd + '/index.js', fields[name] ? [
+    `import mod from '${name}';`,
+    ...fields[name].map((field) => `export const ${field} = mod.${field};`),
+  ].join('\n') : '')
   await writeFile(cwd + '/package.json', JSON.stringify({
     dependencies: {
       [name]: version,
@@ -86,7 +89,9 @@ export async function bundle(name: string, verified = false) {
   const cwd = resolve(tempDir, name)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
-  const entry = locateEntry(meta) || meta.main || 'index.js'
+  const entry = fields[name]
+    ? resolve(cwd, 'index.js')
+    : locateEntry(meta) || meta.main || 'index.js'
   const basedir = dirname(require.resolve(name + '/package.json'))
   const external = new Set([...Object.keys(vendors), ...Object.keys(meta.peerDependencies || {})])
   const result = await build({
@@ -112,7 +117,7 @@ export async function bundle(name: string, verified = false) {
       setup(build) {
         const escape = (text: string) => `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
         const filter = new RegExp([...external].map(escape).join('|'))
-        build.onResolve({ filter }, (args) => args.kind === 'require-call' ? ({
+        build.onResolve({ filter }, (args) => args.path === name ? null : args.kind === 'require-call' ? ({
           path: args.path,
           namespace: 'external',
         }) : ({

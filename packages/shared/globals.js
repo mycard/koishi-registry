@@ -1,5 +1,4 @@
-import buffer from 'buffer'
+import { Buffer } from 'buffer'
 import process from 'process'
 
-export const Buffer = buffer.Buffer
-export { process }
+export { Buffer, process }
