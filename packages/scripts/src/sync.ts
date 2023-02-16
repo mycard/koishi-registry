@@ -16,7 +16,7 @@ declare module '@koishijs/registry' {
   }
 }
 
-const version = 2
+const version = 3
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -135,7 +135,13 @@ async function catchError<T>(message: string, callback: () => T | Promise<T>) {
 
 const outdir = resolve(__dirname, '../../../dist')
 
+class Analytics {
+  public creates: Dict<number> = {}
+  public updates: Dict<number> = {}
+}
+
 class Synchronizer {
+  private analytics = new Analytics()
   private forceUpdate: boolean
   private latest: Dict<DatedPackage>
   private legacy: Dict<DatedPackage>
@@ -224,6 +230,16 @@ class Synchronizer {
       version: '4',
       before(object) {
         if (verified.includes(object.package.name)) object.verified = true
+      },
+      onRegistry: (registry, versions) => {
+        if (!versions.length) return
+        let min = '9999-99-99'
+        for (const item of versions) {
+          const day = registry.time[item.version].slice(0, 10)
+          this.analytics.updates[day] = (this.analytics.updates[day] || 0) + 1
+          if (day < min) min = day
+        }
+        this.analytics.creates[min] = (this.analytics.creates[min] || 0) + 1
       },
       async onSuccess(item) {
         if (item.verified) shortnames.add(item.shortname)
@@ -365,6 +381,7 @@ class Synchronizer {
 
     this.uncategorized.sort()
     await writeFile(resolve(outdir, 'uncategorized.txt'), this.uncategorized.join('\n'))
+    await writeFile(resolve(outdir, 'analytics.json'), JSON.stringify(this.analytics))
 
     // remove unused packages
     const folders = await readdir(outdir + '/modules')

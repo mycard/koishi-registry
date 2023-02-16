@@ -23,6 +23,7 @@ const commonjs = [
   'filer',
   'path',
   'process',
+  'reggol',
   'stream',
   'util',
   'zlib',

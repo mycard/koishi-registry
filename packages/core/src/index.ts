@@ -181,6 +181,7 @@ export interface AnalyzeConfig {
   version: string
   concurrency?: number
   before?(object: SearchObject): void
+  onRegistry?(registry: Registry, versions: RemotePackage[]): Awaitable<void>
   onSuccess?(item: AnalyzedPackage, object: SearchObject): Awaitable<void>
   onFailure?(name: string, reason: any): Awaitable<void>
   onSkipped?(name: string): Awaitable<void>
@@ -282,7 +283,7 @@ export default class Scanner {
     this.total = this.objects.length
   }
 
-  public async process(object: SearchObject, range: string) {
+  public async process(object: SearchObject, range: string, onRegistry: AnalyzeConfig['onRegistry']) {
     const { name } = object.package
     const official = name.startsWith('@koishijs/plugin-')
     const registry = await this.request<Registry>(`/${name}`)
@@ -294,6 +295,7 @@ export default class Scanner {
       } catch {}
     })
 
+    await onRegistry?.(registry, compatible)
     const versions = compatible
       .filter(item => !item.deprecated)
       .sort((a, b) => compare(b.version, a.version))
@@ -333,14 +335,14 @@ export default class Scanner {
   }
 
   public async analyze(config: AnalyzeConfig) {
-    const { concurrency = 5, version, before, onSuccess, onFailure, onSkipped, after } = config
+    const { concurrency = 5, version, before, onSuccess, onFailure, onSkipped, onRegistry, after } = config
 
     const result = await pMap(this.objects, async (object) => {
       if (object.ignored) return
       before?.(object)
       const { name } = object.package
       try {
-        const analyzed = await this.process(object, version)
+        const analyzed = await this.process(object, version, onRegistry)
         if (analyzed) {
           await onSuccess?.(analyzed, object)
           return analyzed
