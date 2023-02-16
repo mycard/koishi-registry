@@ -29,8 +29,8 @@ koishi-plugin-mute-together
 koishi-plugin-plp
 koishi-plugin-pool-simulator
 koishi-plugin-puzzle
-koishi-plugin-repeater
 koishi-plugin-russian-roulette
 koishi-plugin-sleep-manage
 koishi-plugin-tarot
 koishi-plugin-tarot-divination
+koishi-plugin-wordle

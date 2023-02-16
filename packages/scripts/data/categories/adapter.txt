@@ -9,6 +9,7 @@
 koishi-plugin-adapter-discourse
 koishi-plugin-adapter-matrix
 koishi-plugin-adapter-minecraft
+koishi-plugin-adapter-oicq
 koishi-plugin-adapter-telegram-ex
 koishi-plugin-adapter-wechat-official
 koishi-plugin-adapter-wechaty

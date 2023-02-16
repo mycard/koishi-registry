@@ -1,6 +1,7 @@
 @tomlbz/koishi-plugin-openai
 
 koishi-plugin-ai-qa
+koishi-plugin-bingchat
 koishi-plugin-chatgpt
 koishi-plugin-chatgpt-api
 koishi-plugin-crossdressing-detect

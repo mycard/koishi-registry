@@ -6,6 +6,7 @@
 koishi-plugin-158-drive-cracker
 koishi-plugin-anonymous-email
 koishi-plugin-aria2
+koishi-plugin-azure-tts
 koishi-plugin-brainfuck
 koishi-plugin-capture-website
 koishi-plugin-chentong-drive-cracker
@@ -28,6 +29,7 @@ koishi-plugin-notion
 koishi-plugin-order-picker
 koishi-plugin-pack-my-message
 koishi-plugin-oeis
+koishi-plugin-pigeon
 koishi-plugin-pointfree
 koishi-plugin-poj-1
 koishi-plugin-pterodactyl

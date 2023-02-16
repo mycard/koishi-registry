@@ -28,3 +28,4 @@ koishi-plugin-tabulate
 koishi-plugin-ygocard
 koishi-plugin-ygotournament
 koishi-plugin-yunzai
+koishi-plugin-zelda-tears-of-kngdom-reminder

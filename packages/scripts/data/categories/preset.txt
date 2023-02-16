@@ -4,6 +4,8 @@ koishi-plugin-act
 koishi-plugin-action
 koishi-plugin-addfriend
 koishi-plugin-advanced-forward
+koishi-plugin-anti-repeat
+koishi-plugin-ao
 koishi-plugin-auto-reply
 koishi-plugin-command-webhook
 koishi-plugin-dcqq-relay
@@ -20,7 +22,9 @@ koishi-plugin-guild-verifier
 koishi-plugin-huanlin-welcome
 koishi-plugin-img2cmd
 koishi-plugin-nyan
+koishi-plugin-poke-reply
 koishi-plugin-relay
+koishi-plugin-repeater
 koishi-plugin-respondent
 koishi-plugin-responder2
 koishi-plugin-rr-welcome
