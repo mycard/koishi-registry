@@ -8,7 +8,7 @@
         <h2 class="top">
           <span class="title">{{ data.shortname }}</span>
           <el-tooltip v-if="badge" placement="right" :content="badge.text">
-            <span :class="['icon', badge.type]" @click="$emit('query', badge.query)">
+            <span :class="['icon', badge.type]" @click.stop="$emit('query', badge.query)">
               <market-icon :name="badge.type"></market-icon>
             </span>
           </el-tooltip>
@@ -51,7 +51,7 @@
       <span class="spacer grow"></span>
       <div class="avatars">
         <el-tooltip v-for="({ email, name }) in getUsers(data)" :key="name" :content="name">
-          <span class="avatar" @click="$emit('query', 'email:' + email)">
+          <span class="avatar" @click.stop="$emit('query', 'email:' + email)">
             <img :src="getAvatar(email)">
           </span>
         </el-tooltip>

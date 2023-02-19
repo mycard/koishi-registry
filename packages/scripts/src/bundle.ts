@@ -33,7 +33,7 @@ export async function prepare(name: string, version: string) {
     },
   }))
 
-  const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps', '--registry', 'https://registry.npmmirror.com'], { cwd })
+  const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps'], { cwd })
   if (code) throw new Error('npm install failed')
 }
 
@@ -49,7 +49,7 @@ export function locateEntry(meta: Partial<PackageJson>) {
       if (typeof result === 'string') return result
     }
   }
-  if (typeof meta.browser === 'string' && !['filer'].includes(meta.name)) return meta.browser
+  if (typeof meta.browser === 'string') return meta.browser
   return meta.module
 }
 

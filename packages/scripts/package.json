@@ -2,6 +2,7 @@
   "name": "@koishijs/registry-scripts",
   "private": true,
   "version": "0.0.0",
+  "license": "AGPL-3.0",
   "devDependencies": {
     "@types/yargs-parser": "^21.0.0"
   },
