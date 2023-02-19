@@ -33,7 +33,7 @@ export async function prepare(name: string, version: string) {
     },
   }))
 
-  const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps'], { cwd })
+  const code = await spawnAsync(['npm', 'install', '--legacy-peer-deps', '--registry', 'https://registry.npmmirror.com'], { cwd })
   if (code) throw new Error('npm install failed')
 }
 

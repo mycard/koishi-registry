@@ -1,5 +1,5 @@
 <template>
-  <section class="market-package" :class="{ 'has-link': homepage }" @click="openLink(homepage, $event)">
+  <a class="market-package" target="_blank" :href="homepage">
     <div class="header">
       <div class="left">
         <market-icon :name="'outline:' + resolveCategory(data.category)"></market-icon>
@@ -27,14 +27,14 @@
     </div>
     <k-markdown inline class="desc" :source="data.manifest.description.zh || data.manifest.description.en"></k-markdown>
     <div class="footer">
-      <span class="shrink" :class="{ 'has-link': data.links.npm }" @click.stop="openLink(data.links.npm, $event)">
+      <a class="shrink" target="_blank" :href="data.links.npm">
         <market-icon name="tag"></market-icon>{{ data.version }}
-      </span>
+      </a>
       <template v-if="data.installSize">
         <span class="spacer"></span>
-        <span :class="{ 'has-link': data.links.size }" @click.stop="openLink(data.links.size, $event)">
+        <a target="_blank" :href="data.links.size">
           <market-icon name="file-archive"></market-icon>{{ formatSize(data.installSize) }}
-        </span>
+        </a>
       </template>
       <template v-if="data.downloads">
         <span class="spacer"></span>
@@ -57,7 +57,7 @@
         </el-tooltip>
       </div>
     </div>
-  </section>
+  </a>
 </template>
 
 <script lang="ts" setup>
@@ -77,12 +77,6 @@ const props = defineProps<{
 }>()
 
 const homepage = computed(() => props.data.links.homepage || props.data.links.repository)
-
-function openLink(url: string, event: MouseEvent) {
-  if (!url) return
-  if ((event.target as Element).tagName === 'A') return
-  window.open(url, '_blank', 'noopener noreferrer')
-}
 
 const badge = computed(() => {
   for (const type in badges) {
@@ -116,7 +110,7 @@ function formatSize(value: number) {
 
 <style lang="scss" scoped>
 
-.has-link {
+.cursor-pointer {
   cursor: pointer;
 }
 
@@ -130,6 +124,12 @@ function formatSize(value: number) {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  transition: box-shadow 0.3s ease;
+  box-shadow: 0 0 0 2px inset transparent;
+
+  &:hover {
+    box-shadow: 0 0 0 2px inset var(--k-color-active);
+  }
 
   .market-icon {
     height: 1em;
