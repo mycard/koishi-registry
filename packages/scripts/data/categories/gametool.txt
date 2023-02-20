@@ -21,6 +21,7 @@ koishi-plugin-mcinfo
 koishi-plugin-mcping
 koishi-plugin-mswar-active-rank
 koishi-plugin-oni-rocket-calculator
+koishi-plugin-robo-fortune
 koishi-plugin-splatoon
 koishi-plugin-srvpro-roomlist
 koishi-plugin-stnb

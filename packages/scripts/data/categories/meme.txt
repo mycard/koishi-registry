@@ -18,9 +18,11 @@ koishi-plugin-famous-word
 koishi-plugin-hitokoto
 koishi-plugin-httpcat
 koishi-plugin-human-sign
+koishi-plugin-ikun
 koishi-plugin-interesting-word
 koishi-plugin-jupai
 koishi-plugin-love-word
+koishi-plugin-marisa-reply
 koishi-plugin-meme
 koishi-plugin-nonsense
 koishi-plugin-pengyouquan-word

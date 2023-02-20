@@ -10,4 +10,4 @@ koishi-plugin-puppeteer
 koishi-plugin-recall
 koishi-plugin-schedule
 koishi-plugin-sudo
-koishi-plugin-verified
+koishi-plugin-verifier

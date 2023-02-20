@@ -1,3 +1,4 @@
+@ninnana/koishi-plugin-24point
 @nonebot/koishi-plugin-cybersensoji
 @nonebot/koishi-plugin-draw
 @nonebot/koishi-plugin-jrrp
@@ -21,6 +22,7 @@ koishi-plugin-genshin-gacha
 koishi-plugin-guess-number
 koishi-plugin-hangman
 koishi-plugin-huanlin-sleep
+koishi-plugin-hungry-bot
 koishi-plugin-intimacy
 koishi-plugin-jrrp
 koishi-plugin-lottery

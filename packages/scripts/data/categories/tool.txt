@@ -4,6 +4,7 @@
 @nonebot/koishi-plugin-simplemusic
 
 koishi-plugin-158-drive-cracker
+koishi-plugin-a2b
 koishi-plugin-anonymous-email
 koishi-plugin-aria2
 koishi-plugin-azure-tts
@@ -15,6 +16,7 @@ koishi-plugin-ekwing-fucker
 koishi-plugin-exchange-rate
 koishi-plugin-gfm
 koishi-plugin-glot
+koishi-plugin-ha
 koishi-plugin-idcard-checker
 koishi-plugin-ip-checker
 koishi-plugin-jiutian-toolkit

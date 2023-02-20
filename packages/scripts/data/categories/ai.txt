@@ -1,4 +1,5 @@
 @tomlbz/koishi-plugin-openai
+@xiaoqi1113/koishi-plugin-management
 
 koishi-plugin-ai-qa
 koishi-plugin-bingchat
