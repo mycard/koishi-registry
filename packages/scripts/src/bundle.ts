@@ -1,7 +1,7 @@
 import { PackageJson } from '@koishijs/registry'
 import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
 import { exec, ExecOptions } from 'child_process'
-import { dirname, resolve } from 'path'
+import { dirname, join, resolve } from 'path'
 import { build } from 'esbuild'
 import { createRequire } from 'module'
 import { insecure } from './utils'
@@ -89,13 +89,13 @@ export async function bundle(name: string, verified = false) {
   const cwd = resolve(tempDir, name)
   const require = createRequire(cwd + '/package.json')
   const meta: PackageJson = require(name + '/package.json')
+  const basedir = dirname(require.resolve(name + '/package.json'))
   const entry = fields[name]
     ? resolve(cwd, 'index.js')
-    : locateEntry(meta) || meta.main || 'index.js'
-  const basedir = dirname(require.resolve(name + '/package.json'))
+    : resolve(basedir, locateEntry(meta) || meta.main || 'index.js')
   const external = new Set([...Object.keys(vendors), ...Object.keys(meta.peerDependencies || {})])
   const result = await build({
-    entryPoints: [resolve(basedir, entry)],
+    entryPoints: [entry],
     bundle: true,
     minify: require.main !== module,
     drop: ['console', 'debugger'],
@@ -106,6 +106,7 @@ export async function bundle(name: string, verified = false) {
     format: 'esm',
     logLevel: 'silent',
     define: {
+      '__dirname': 'import.meta.url',
       'global': 'globalThis',
       'process.env.KOISHI_ENV': JSON.stringify('browser'),
       'process.env.KOISHI_REGISTRY': JSON.stringify(endpoint),
@@ -117,13 +118,13 @@ export async function bundle(name: string, verified = false) {
       setup(build) {
         const escape = (text: string) => `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
         const filter = new RegExp([...external].map(escape).join('|'))
-        build.onResolve({ filter }, (args) => args.path === name ? null : args.kind === 'require-call' ? ({
+        build.onResolve({ filter }, (args) => args.path === name ? null : args.kind === 'require-call' ? {
           path: args.path,
           namespace: 'external',
-        }) : ({
+        } : {
           external: true,
           path: resolveVendor(args.path),
-        }))
+        })
         build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
           external: true,
           path: resolveVendor(args.path),
@@ -146,17 +147,31 @@ export async function bundle(name: string, verified = false) {
   await mkdir(outdir, { recursive: true })
   await writeFile(filename, contents)
 
-  const files = await globby(meta.koishi?.public || [], { cwd: basedir })
-  for (const file of files) {
-    const buffer = await readFile(resolve(basedir, file))
+  async function copy(source: string, target: string) {
+    const buffer = await readFile(source)
     length += buffer.byteLength
     if (!verified && length > 1024 * 1024) {
       await rm(outdir, { recursive: true, force: true })
       return 'size exceeded'
     }
-    const filename = resolve(outdir, file)
+    const filename = resolve(outdir, target)
     await mkdir(dirname(filename), { recursive: true })
     await writeFile(filename, buffer)
+  }
+
+  let mapping = meta.koishi?.public || []
+  if (Array.isArray(mapping)) {
+    mapping = Object.fromEntries(mapping.map((name) => [name, './' + name]))
+  }
+  for (const [target, source] of Object.entries(mapping)) {
+    if (source.startsWith('./')) {
+      const files = await globby(source, { cwd: basedir, onlyFiles: true })
+      for (const file of files) {
+        await copy(resolve(basedir, file), join(target, file.slice(source.length - 2)))
+      }
+    } else {
+      await copy(require.resolve(source), target)
+    }
   }
 
   if (meta.peerDependencies?.['@koishijs/plugin-console']) {
