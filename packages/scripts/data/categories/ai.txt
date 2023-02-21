@@ -13,6 +13,7 @@ koishi-plugin-facercg
 koishi-plugin-genshin-voice
 koishi-plugin-hlai-ocr
 koishi-plugin-hlai-painter
+koishi-plugin-lsp
 koishi-plugin-mollyai
 koishi-plugin-novel-ai-api
 koishi-plugin-novelai

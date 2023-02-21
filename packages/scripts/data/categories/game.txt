@@ -30,6 +30,7 @@ koishi-plugin-marry
 koishi-plugin-mute-together
 koishi-plugin-plp
 koishi-plugin-pool-simulator
+koishi-plugin-profile
 koishi-plugin-puzzle
 koishi-plugin-russian-roulette
 koishi-plugin-sleep-manage

@@ -16,7 +16,7 @@ declare module '@koishijs/registry' {
   }
 }
 
-const version = 3
+const version = 2
 
 async function getLegacy(dirname: string) {
   await mkdir(dirname + '/modules', { recursive: true })
@@ -367,7 +367,7 @@ class Synchronizer {
 
     await writeFile(resolve(outdir, 'play.json'), JSON.stringify({
       timestamp,
-      objects: this.packages.filter(item => item.portable),
+      objects: this.packages.filter(item => item.portable && !item.manifest.hidden),
     }))
 
     // we don't need version details

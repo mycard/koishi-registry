@@ -159,7 +159,7 @@ export async function bundle(name: string, verified = false) {
     await writeFile(filename, buffer)
   }
 
-  let mapping = meta.koishi?.public || []
+  let mapping = meta.koishi?.public || meta.koishi?.exports || []
   if (Array.isArray(mapping)) {
     mapping = Object.fromEntries(mapping.map((name) => [name, './' + name]))
   }

@@ -18,6 +18,8 @@ koishi-plugin-gfm
 koishi-plugin-glot
 koishi-plugin-ha
 koishi-plugin-idcard-checker
+koishi-plugin-imej
+koishi-plugin-imej-help
 koishi-plugin-ip-checker
 koishi-plugin-jiutian-toolkit
 koishi-plugin-kbot
@@ -47,6 +49,7 @@ koishi-plugin-shorturl
 koishi-plugin-showtime
 koishi-plugin-shuijishu
 koishi-plugin-spawn-handwrite-img
+koishi-plugin-status-pro
 koishi-plugin-subscribe-at
 koishi-plugin-tex
 koishi-plugin-tianyi-drive-cracker
@@ -58,3 +61,4 @@ koishi-plugin-who-at-me
 koishi-plugin-whois
 koishi-plugin-whoviews
 koishi-plugin-wyblacklist
+koishi-plugin-ziyong

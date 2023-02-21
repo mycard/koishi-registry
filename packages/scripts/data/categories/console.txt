@@ -23,4 +23,3 @@ koishi-plugin-presence
 koishi-plugin-presence-wakatime
 koishi-plugin-schema-guide
 koishi-plugin-spring-festival-ui
-koishi-plugin-status-pro
