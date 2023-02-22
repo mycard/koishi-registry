@@ -130,8 +130,9 @@ export async function bundle(name: string, verified = false) {
           path: resolveVendor(args.path),
         }))
         build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+          loader: 'ts',
           contents: commonjs.includes(args.path)
-            ? `import mod from ${JSON.stringify(args.path)}; export default mod;`
+            ? `import mod from ${JSON.stringify(args.path)}; export = mod;`
             : `export * from ${JSON.stringify(args.path)};`,
         }))
       },
@@ -177,7 +178,7 @@ export async function bundle(name: string, verified = false) {
   if (meta.peerDependencies?.['@koishijs/plugin-console']) {
     for (const name of redirects) {
       const filename = resolve(outdir, name)
-      await writeFile(filename, `export * from "https://play.koishi.chat/${name}";\n`)
+      await writeFile(filename, `export * from "https://koishi.online/${name}";\n`)
     }
   }
 }
