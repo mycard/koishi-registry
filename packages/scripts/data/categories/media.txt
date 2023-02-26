@@ -1,3 +1,4 @@
+@kuroshio/koishi-plugin-twitter
 @myrtus/koishi-plugin-mediawiki
 @nonebot/koishi-plugin-analysis-bilibili
 @nonebot/koishi-plugin-biliav
@@ -15,6 +16,7 @@ koishi-plugin-bilibili-live-monitor
 koishi-plugin-blibli-list
 koishi-plugin-blive
 koishi-plugin-bvid
+koishi-plugin-canteensjtu
 koishi-plugin-check-oil-prices
 koishi-plugin-check-seven-day-information
 koishi-plugin-dailygames

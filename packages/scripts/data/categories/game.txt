@@ -1,3 +1,4 @@
+@snakelet/koishi-plugin-norn-dice
 @ninnana/koishi-plugin-24point
 @nonebot/koishi-plugin-cybersensoji
 @nonebot/koishi-plugin-draw
@@ -23,6 +24,7 @@ koishi-plugin-guess-number
 koishi-plugin-hangman
 koishi-plugin-huanlin-sleep
 koishi-plugin-hungry-bot
+koishi-plugin-hungry-bot-2
 koishi-plugin-intimacy
 koishi-plugin-jrrp
 koishi-plugin-lottery

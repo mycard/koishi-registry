@@ -24,6 +24,7 @@ koishi-plugin-jupai
 koishi-plugin-love-word
 koishi-plugin-marisa-reply
 koishi-plugin-meme
+koishi-plugin-nonememe
 koishi-plugin-nonsense
 koishi-plugin-pengyouquan-word
 koishi-plugin-petpet

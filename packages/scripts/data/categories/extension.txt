@@ -16,6 +16,7 @@ koishi-plugin-money
 koishi-plugin-nonebot
 koishi-plugin-send-as-image
 koishi-plugin-spawn
+koishi-plugin-worker-proxy
 koishi-plugin-x6
 koishi-plugin-xff
 koishi-plugin-xff2

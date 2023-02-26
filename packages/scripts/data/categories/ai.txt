@@ -28,4 +28,4 @@ koishi-plugin-sd-extra
 koishi-plugin-sd-interroage
 koishi-plugin-sd-switch
 koishi-plugin-sd-taylor
-koishi-plugin-wolfram-alpha
+koishi-plugin-tensorboard

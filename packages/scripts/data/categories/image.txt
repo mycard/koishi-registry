@@ -20,6 +20,7 @@ koishi-plugin-picsource-twitter
 koishi-plugin-picsource-yande
 koishi-plugin-random-dog
 koishi-plugin-random-wallpaper
+koishi-plugin-setu
 koishi-plugin-sex-img
 koishi-plugin-todaybizhi-img
 koishi-plugin-twdne

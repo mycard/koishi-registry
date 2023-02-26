@@ -51,6 +51,7 @@ koishi-plugin-shuijishu
 koishi-plugin-spawn-handwrite-img
 koishi-plugin-status-pro
 koishi-plugin-subscribe-at
+koishi-plugin-suli-first
 koishi-plugin-tex
 koishi-plugin-tianyi-drive-cracker
 koishi-plugin-translator-baidu
@@ -60,5 +61,6 @@ koishi-plugin-xkt
 koishi-plugin-who-at-me
 koishi-plugin-whois
 koishi-plugin-whoviews
+koishi-plugin-wolfram-alpha
 koishi-plugin-wyblacklist
 koishi-plugin-ziyong
