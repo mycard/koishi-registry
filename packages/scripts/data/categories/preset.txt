@@ -5,6 +5,7 @@ koishi-plugin-action
 koishi-plugin-addfriend
 koishi-plugin-advanced-forward
 koishi-plugin-anti-repeat
+koishi-plugin-anti-wenhao
 koishi-plugin-ao
 koishi-plugin-auto-reply
 koishi-plugin-command-webhook

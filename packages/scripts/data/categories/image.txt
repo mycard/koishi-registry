@@ -1,4 +1,5 @@
 @nonebot/koishi-plugin-heisi
+@rinkuto/koishi-plugin-pixiv
 
 koishi-plugin-4k-background
 koishi-plugin-4kfengjing

@@ -1,3 +1,4 @@
+@kuroshio/koishi-plugin-genshin
 @nonebot/koishi-plugin-acc-calculate
 @nonebot/koishi-plugin-gscode
 @nonebot/koishi-plugin-warframe
@@ -15,6 +16,7 @@ koishi-plugin-genshin-code
 koishi-plugin-genshin-resin
 koishi-plugin-genshin-toolkit
 koishi-plugin-genshin-voice
+koishi-plugin-genshinkit
 koishi-plugin-genshinvoice-plus
 koishi-plugin-hok-rank
 koishi-plugin-maimai
@@ -29,6 +31,7 @@ koishi-plugin-splatoon
 koishi-plugin-srvpro-roomlist
 koishi-plugin-stnb
 koishi-plugin-tabulate
+koishi-plugin-vava
 koishi-plugin-ygocard
 koishi-plugin-ygotournament
 koishi-plugin-yunzai

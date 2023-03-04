@@ -15,6 +15,7 @@ koishi-plugin-dice
 koishi-plugin-dicex
 koishi-plugin-draw
 koishi-plugin-dujitang-word
+koishi-plugin-easy-dice-bot
 koishi-plugin-edging
 koishi-plugin-favor
 koishi-plugin-fortune

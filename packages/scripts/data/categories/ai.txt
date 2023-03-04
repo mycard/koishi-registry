@@ -2,9 +2,12 @@
 @xiaoqi1113/koishi-plugin-management
 
 koishi-plugin-ai-qa
+koishi-plugin-ai-tag
 koishi-plugin-bingchat
 koishi-plugin-chatgpt
 koishi-plugin-chatgpt-api
+koishi-plugin-chatgpt-free
+koishi-plugin-chatgpt-hanatan
 koishi-plugin-crossdressing-detect
 koishi-plugin-davinci-003
 koishi-plugin-deep-danbooru
@@ -19,11 +22,13 @@ koishi-plugin-novel-ai-api
 koishi-plugin-novelai
 koishi-plugin-openai-chatbot
 koishi-plugin-openchat
+koishi-plugin-openchat2
 koishi-plugin-qingyunke-free
 koishi-plugin-rasa-nlg-dict
 koishi-plugin-rasa-nlu
 koishi-plugin-rr-st
 koishi-plugin-rryth
+koishi-plugin-runtu
 koishi-plugin-sd-extra
 koishi-plugin-sd-interroage
 koishi-plugin-sd-switch
