@@ -7,6 +7,7 @@
 
 koishi-plugin-5k
 koishi-plugin-abbreviation
+koishi-plugin-abstract
 koishi-plugin-alipay-voice
 koishi-plugin-bullshit-generator
 koishi-plugin-chengyu-words

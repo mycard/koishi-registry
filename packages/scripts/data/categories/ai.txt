@@ -1,3 +1,4 @@
+@rinkuto/koishi-plugin-chatgpt
 @tomlbz/koishi-plugin-openai
 @xiaoqi1113/koishi-plugin-management
 
@@ -20,15 +21,19 @@ koishi-plugin-lsp
 koishi-plugin-mollyai
 koishi-plugin-novel-ai-api
 koishi-plugin-novelai
+koishi-plugin-openai-api
 koishi-plugin-openai-chatbot
+koishi-plugin-openai-chatgpt
 koishi-plugin-openchat
 koishi-plugin-openchat2
 koishi-plugin-qingyunke-free
 koishi-plugin-rasa-nlg-dict
 koishi-plugin-rasa-nlu
+koishi-plugin-rr-gpt
 koishi-plugin-rr-st
 koishi-plugin-rryth
 koishi-plugin-runtu
+koishi-plugin-runtu-chat
 koishi-plugin-sd-extra
 koishi-plugin-sd-interroage
 koishi-plugin-sd-switch
