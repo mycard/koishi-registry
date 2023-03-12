@@ -16,6 +16,7 @@ koishi-plugin-desktop
 koishi-plugin-editor-test
 koishi-plugin-envinfo
 koishi-plugin-footer
+koishi-plugin-koishi
 koishi-plugin-live2d
 koishi-plugin-migration
 koishi-plugin-never-gonna-give-you-up

@@ -5,6 +5,7 @@
 @koishijs/plugin-commands
 @koishijs/plugin-echo
 @koishijs/plugin-help
+@koishijs/plugin-hmr
 @koishijs/plugin-locales
 @koishijs/plugin-mock
 @koishijs/plugin-rate-limit

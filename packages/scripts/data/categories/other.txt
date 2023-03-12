@@ -3,3 +3,4 @@ koishi-plugin-boom2
 koishi-plugin-dice-killer
 koishi-plugin-error
 koishi-plugin-hisoutensoku-jammer
+koishi-plugin-test-pub

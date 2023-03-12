@@ -10,6 +10,7 @@ koishi-plugin-bangumi
 koishi-plugin-baidu
 koishi-plugin-bdynamic
 koishi-plugin-bgmlist
+koishi-plugin-bibigpt
 koishi-plugin-bilibili
 koishi-plugin-bilibili-list
 koishi-plugin-bilibili-live-monitor

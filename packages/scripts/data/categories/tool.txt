@@ -37,6 +37,7 @@ koishi-plugin-pigeon
 koishi-plugin-pointfree
 koishi-plugin-poj-1
 koishi-plugin-pterodactyl
+koishi-plugin-qq-img
 koishi-plugin-qrcode
 koishi-plugin-random-num
 koishi-plugin-random-number
@@ -57,10 +58,10 @@ koishi-plugin-translator-baidu
 koishi-plugin-translator-bing
 koishi-plugin-translator-youdao
 koishi-plugin-xkt
+koishi-plugin-webdav
 koishi-plugin-who-at-me
 koishi-plugin-whois
 koishi-plugin-whoviews
 koishi-plugin-wolfram-alpha
 koishi-plugin-wyblacklist
 koishi-plugin-ziyong
-koishi-plugin-xmchange

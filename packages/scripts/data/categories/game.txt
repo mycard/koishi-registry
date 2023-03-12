@@ -21,6 +21,7 @@ koishi-plugin-favor
 koishi-plugin-fortune
 koishi-plugin-gamewallpaper-byripple
 koishi-plugin-genshin-gacha
+koishi-plugin-gpt-chengyu
 koishi-plugin-guess-number
 koishi-plugin-hangman
 koishi-plugin-huanlin-sleep
